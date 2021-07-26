@@ -38,6 +38,7 @@ int bitset_contains(BitSet* bitset, int i) {
 
 void bitset_add(BitSet* bitset, int i) {
 	if (i < bitset->n) {
+		// TODO - worth checking if item already in set? In that case we shouldn't increment numOfElements
 		int block = i / bitset->size;
 		int pos = i % bitset->size;
 		bitset->set[block] |= (unsigned long)1 << pos;

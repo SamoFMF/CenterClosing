@@ -22,6 +22,8 @@ void binary_heap_decrease_key(BinaryHeap* heap, int node, double value);
 
 void binary_heap_increase_key(BinaryHeap* heap, int node, double value);
 
+void binary_heap_update_key(BinaryHeap* heap, int node, double value);
+
 int binary_heap_is_empty(BinaryHeap* heap);
 
 #endif

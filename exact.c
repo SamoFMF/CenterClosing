@@ -171,33 +171,34 @@ Result exact_final_recursive(Graph* G, int k, BinaryHeap* queue, BitSet* R, Cent
 			bitset_remove(R, queue->nodes[i]);
 		}
 
-
 		return res;
 	}
 	else {
 		// Pop best from queue
 		PairIntDouble pair = binary_heap_extract_min(queue);
 
+
 		// Prep results
 		Result res, res_tmp;
-		res.score = INT_MAX;
-		res.R = NULL;
+		/*res.score = INT_MAX;
+		res.R = NULL;*/
+
+		// `pair.node` is kept
+		res = exact_final_recursive(G, k, queue, R, centers, reverse_center_map, priority_function, cur_eval, best);
+		if (res.score < best) best = res.score;
 
 		// Check if center `pair.node` is removed
 		double eval = centers_redistribute(centers, G, R, reverse_center_map[pair.node]); // Remove pair.node and distribute its nodes to their new nearest centers
 		int revert = 0; // Should we revert queue updates? 0 = No, 1 = Yes
-		int loc; // Used for updating queue
-		double cur_value, value; // Used for updating queue
+		double value;
 		if (eval < cur_eval) eval = cur_eval;
 		if (eval < best) {
 			bitset_add(R, pair.node); // Add pair.node to removed centers
 
 			// Update queue
 			for (int i = 0; i < G->m; i++) {
-				loc = queue->loc[G->C[i]];
-				cur_value = queue->heap[loc];
 				value = priority_function->single(centers[i]);
-				if (value > cur_value) binary_heap_increase_key(queue, G->C[i], value);
+				binary_heap_update_key(queue, G->C[i], value);
 			}
 			revert = 1;
 
@@ -205,6 +206,7 @@ Result exact_final_recursive(Graph* G, int k, BinaryHeap* queue, BitSet* R, Cent
 			res_tmp = exact_final_recursive(G, k - 1, queue, R, centers, reverse_center_map, priority_function, eval, k == 1 ? eval : best); // If k==1, this was the last node to be removed, so we send eval instead of best, since eval is the actual value of final R
 
 			if (res_tmp.score < best) {
+				if (res.R != NULL) free(res.R);
 				res = res_tmp;
 			}
 			else if (res_tmp.R != NULL) { // If res_tmp is not better than best & R is not NULL, delete it from memory
@@ -217,28 +219,27 @@ Result exact_final_recursive(Graph* G, int k, BinaryHeap* queue, BitSet* R, Cent
 		if (revert) {
 			// Revert queue updates
 			for (int i = 0; i < G->m; i++) {
-				loc = queue->loc[G->C[i]];
-				cur_value = queue->heap[loc];
 				value = priority_function->single(centers[i]);
-				if (value < cur_value) binary_heap_decrease_key(queue, G->C[i], value);
+				binary_heap_update_key(queue, G->C[i], value);
 			}
 		}
 
-		// Check if center `pair.node` is kept
-		res_tmp = exact_final_recursive(G, k, queue, R, centers, reverse_center_map, priority_function, cur_eval, res.R != NULL ? res.score : best);
-		if (res.R == NULL && res_tmp.score < best) {
-			// No need to delete res.R from memory ... it is NULL
-			res = res_tmp;
-		}
-		else if (res_tmp.score < res.score) {
-			// If res.R == NULL, then res_tmp.score >= best, which means it can only be INT_MAX, so it can't be < res.score and we can't be here
-			// This means res.R != NULL and res_tmp.score < res.score < INT_MAX
-			free(res.R);
-			res = res_tmp;
-		}
-		else {
-			// res_tmp = {INT_MAX, NULL} ... no need to delete res_tmp.R from memory, it's NULL
-		}
+		//// Check if center `pair.node` is kept
+		//res_tmp = exact_final_recursive(G, k, queue, R, centers, reverse_center_map, priority_function, cur_eval, res.R != NULL ? res.score : best);
+		//if (res.R == NULL && res_tmp.score < best) {
+		//	// No need to delete res.R from memory ... it is NULL
+		//	res = res_tmp;
+		//}
+		//else if (res_tmp.score < res.score) {
+		//	// If res.R == NULL, then res_tmp.score >= best, which means it can only be INT_MAX, so it can't be < res.score and we can't be here
+		//	// This means res.R != NULL and res_tmp.score < res.score < INT_MAX
+		//	free(res.R);
+		//	res = res_tmp;
+		//}
+		//else {
+		//	// res_tmp = {INT_MAX, NULL} ... no need to delete res_tmp.R from memory, it's NULL
+		//}
+
 
 		// Add `pair` back into the queue
 		binary_heap_insert(queue);

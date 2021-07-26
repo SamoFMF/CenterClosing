@@ -144,8 +144,8 @@ int main() {
 
 
     //double** D;
-    //D = read_pajek_dist("data/moj2.net");
     //int n = 150;
+    //D = read_pajek_dist("data/moj2.net", &n);
     //printf("START\n");
     ////D = create_random_distances(n);
 
@@ -155,25 +155,25 @@ int main() {
     //Graph* G = graph_new(D, n);
 
     ////int Cb[4] = { 0, 1, 2, 4 };
-    //int Cb[15];
-    //for (int i = 0; i < 15; i++) {
+    //int Cb[30];
+    //for (int i = 0; i < 30; i++) {
     //    Cb[i] = i;
     //}
     //BitSet* C = bitset_new(n);
-    //int m = 15;
-    //int k = 7;
+    //int m = 30;
+    //int k = 15;
     //bitset_add_from(C, Cb, m);
 
     //graph_add_from_centers(G, C, m);
 
-    //BitSet* R = bitset_new(G->N);
-    //int Rb[7] = { 0,1,2,3,5,6,7 };
-    //bitset_add_from(R, Rb, 7);
+    /*BitSet* R = bitset_new(G->N);
+    int Rb[7] = { 0,1,2,3,5,6,7 };
+    bitset_add_from(R, Rb, 7);*/
 
 
     //double** D;
-    //D = read_pajek_dist("data/circle.net");
-    //int n = 10;
+    //int n;
+    //D = read_pajek_dist("data/circle.net", &n);
     //printf("START\n");
     ////D = create_random_distances(n);
 
@@ -233,7 +233,7 @@ int main() {
     clock_t start, end;
     double cpu_time_used;
 
-    start = clock();
+    /*start = clock();
     Result res = bruteforce(G, k);
     end = clock();
 
@@ -246,7 +246,7 @@ int main() {
     }
     printf("]\n");
 
-    printf("RESULT = %f \n", res.score);
+    printf("RESULT = %f \n", res.score);*/
 
     printf("\n\nSTART OF EXACT:\n");
 

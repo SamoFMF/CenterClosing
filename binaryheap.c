@@ -99,6 +99,7 @@ int binary_heap_search(BinaryHeap* heap, int node) {
 void binary_heap_decrease_key(BinaryHeap* heap, int node, double value) {
 	// Find node
 	int i = binary_heap_search(heap, node);
+	if (i >= heap->n) return;
 
 	// Decrease key
 	heap->heap[i] = value;
@@ -108,14 +109,36 @@ void binary_heap_decrease_key(BinaryHeap* heap, int node, double value) {
 }
 
 void binary_heap_increase_key(BinaryHeap* heap, int node, double value) {
-	// Fin dnode
+	// Find node
 	int i = binary_heap_search(heap, node);
+	if (i >= heap->n) return;
 	
 	// Increase key
 	heap->heap[i] = value;
 
 	// Heapify down
 	min_heapify(heap, i);
+}
+
+void binary_heap_update_key(BinaryHeap* heap, int node, double value) {
+	// Find node
+	int i = binary_heap_search(heap, node);
+	if (i >= heap->n) return;
+
+	if (value > heap->heap[i]) {
+		// Increase key
+		heap->heap[i] = value;
+
+		// Heapify down
+		min_heapify(heap, i);
+	}
+	else if (value < heap->heap[i]) {
+		// Decrease key
+		heap->heap[i] = value;
+
+		// Heapify up
+		min_heapify_up(heap, i);
+	}
 }
 
 int binary_heap_is_empty(BinaryHeap* heap) {

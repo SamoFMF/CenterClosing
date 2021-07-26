@@ -160,7 +160,6 @@ double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx) {
         closest[i] = idxmin;
     }
 
-    //printf("Step 3\n");
     // Resize centers
     for (int i = 0; i < G->m; i++) {
         center = centers[i];
