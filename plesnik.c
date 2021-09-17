@@ -3,6 +3,76 @@
 #include "graph.h"
 #include "algutils.h"
 
+int compare(void* cont, const void* x, const void* y) {
+	double* cont1 = cont;
+	if (cont1 == NULL) printf("NULL!");
+	double f = cont1[*((int*)x)];
+	double s = cont1[*((int*)y)];
+	if (f > s) return 1;
+	if (f < s) return -1;
+	return 0;
+}
+
+Result range_new(Graph* G, int k, double B) {
+	int k1 = G->m - k;
+	Result res;
+
+	BitSet* covered = bitset_new(G->n);
+	int* R = bitset_new_full(G->N);
+
+	// Sort nodes by h-score
+	int* idxs;
+	if ((idxs = malloc(G->n * sizeof * idxs)) == NULL) {
+		printf("ERROR - Ran out of memory: range - idxs");
+	}
+	else {
+		for (int i = 0; i < G->n; i++) idxs[i] = i;
+	}
+	qsort_s(idxs, G->n, sizeof(int), compare, G->H);
+
+	int node, center, cstar, cstar_idx, i, j;
+	double dist;
+	for (int idx = 0; idx < G->n; idx++) {
+		i = idxs[idx];
+		if (bitset_contains(covered, i)) continue;
+		node = G->C[i];
+
+		// Check ifi there exists a center with range at most B
+		cstar = -1;
+		cstar_idx = -1;
+		for (int j = 0; j < G->m; j++) {
+			center = G->C[j];
+			dist = f(G, i, j);
+			if (dist <= B) {
+				cstar = center;
+				cstar_idx = j;
+				break;
+			}
+		}
+
+		// Check if center at range at most B was found
+		if (cstar < 0) {
+			// TODO - free things
+			res.score = 0;
+			res.R = NULL;
+			return res;
+		}
+		else {
+			// Found center `cstar` => cover all nodes within 3*B distance
+			bitset_add(covered, i);
+			bitset_remove(R, cstar);
+			for (int jdx = idx + 1; jdx < G->n; jdx++) {
+				j = idxs[jdx];
+				node = G->C[j];
+				dist = f(G, i, cstar_idx);
+				if (dist <= 3 * B) bitset_add(covered, j);
+			}
+		}
+	}
+
+	// TODO
+}
+
 Result range(Graph* G, int k, double B) {
 	int k1 = G->m - k;
 	Result res;
@@ -21,7 +91,7 @@ Result range(Graph* G, int k, double B) {
 	double dist;
 	for (int i = 0; i < G->n; i++) {
 		if (bitset_contains(covered, i)) continue;
-		node = G->V[i];
+		node = G->C[i];
 
 		// Check if there exists a center with range at most B
 		cstar = -1;
@@ -46,7 +116,7 @@ Result range(Graph* G, int k, double B) {
 			// Found center `cstar` ... cover all nodes within 3*B distance
 			bitset_add(covered, i);
 			for (int j = i + 1; j < G->n; j++) {
-				node = G->V[i];
+				node = G->C[j];
 				dist = G->D[node][cstar];
 				if (dist <= 3 * B) bitset_add(covered, j);
 			}
@@ -99,7 +169,7 @@ Result plesnik(Graph* G, int k, double tol) {
 	for (int i = 0; i < G->n; i++) {
 		dmin = INT_MAX;
 		for (int j = 0; j < G->m; j++) {
-			dist = G->D[G->V[i]][G->C[j]];
+			dist = G->D[G->C[i]][G->S[j]];
 			if (dist < dmin) dmin = dist;
 		}
 		if (dmin > bmin) bmin = dmin;

@@ -88,6 +88,7 @@ LinkedList* linkedlist_remove_last(LinkedList* linkedlist) {
 void floyd_warshall_algorithm(double** D, int n) {
 	double dist;
 	for (int k = 0; k < n; k++) {
+		if (k % 100 == 0) printf("%d\n", k);
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
 				if (D[i][k] < INT_MAX && D[k][j] < INT_MAX) {
@@ -121,4 +122,54 @@ double** distance_matrix_new(int n) {
 		}
 	}
 	return D;
+}
+
+/// <summary>
+/// Frees 2D matrix of doubles of size n x n
+void free_matrix_double(double** M, int n) {
+	if (M != NULL) {
+		for (int i = 0; i < n; i++) {
+			if (M[i] != NULL) free(M[i]);
+		}
+		free(M);
+	}
+}
+
+/// <summary>
+/// Frees 2D matrix of ints of size n x n
+void free_matrix_int(int** M, int n) {
+	if (M != NULL) {
+		for (int i = 0; i < n; i++) {
+			if (M[i] != NULL) free(M[i]);
+		}
+		free(M);
+	}
+}
+
+
+// PRINT FUNCTIONS
+void print_array_double(double* xs, int n) {
+	for (int i = 0; i < n; i++)
+		printf("%6.2f ", xs[i]);
+	printf("\n");
+}
+
+void print_matrix_double(double** M, int n) {
+	for (int i = 0; i < n; i++) {
+		print_array_double(M[i], n);
+	}
+	printf("\n");
+}
+
+void print_array_int(int* xs, int n) {
+	for (int i = 0; i < n; i++)
+		printf("%6d ", xs[i]);
+	printf("\n");
+}
+
+void print_matrix_int(int** M, int n) {
+	for (int i = 0; i < n; i++) {
+		print_array_int(M[i], n);
+	}
+	printf("\n");
 }

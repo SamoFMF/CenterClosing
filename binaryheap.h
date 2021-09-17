@@ -12,6 +12,10 @@ typedef struct BinaryHeap {
 
 BinaryHeap* binary_heap_new(int* xs, double* vals, int n, int m);
 
+BinaryHeap* binary_heap_new_test(int* xs, double* vals, int n);
+
+BinaryHeap* binary_heap_new_range(double* vals, int n);
+
 void binary_heap_free(BinaryHeap* heap);
 
 PairIntDouble binary_heap_extract_min(BinaryHeap* heap);

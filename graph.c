@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "graph.h"
 
-// Raw graps (from pajek files)
+// Raw graphs (from pajek files)
 GraphRaw* graph_raw_new(int n) {
 	GraphRaw* graph;
 	if ((graph = malloc(sizeof * graph)) == NULL) {
@@ -43,13 +43,65 @@ void graph_raw_free(GraphRaw* graph) {
 }
 
 // Graph struct used by algorithms
-Graph* graph_new(double** D, int n) {
+//Graph* graph_new(double** D, int n) {
+//	Graph* graph;
+//	if ((graph = malloc(sizeof * graph)) != NULL) {
+//		graph->D = D;
+//		graph->N = n;
+//	}
+//	return graph;
+//}
+
+Graph* graph_new() {
 	Graph* graph;
 	if ((graph = malloc(sizeof * graph)) != NULL) {
-		graph->D = D;
-		graph->N = n;
+		graph->G = NULL;
+		graph->D = NULL;
+		graph->C = NULL;
+		graph->S = NULL;
+		graph->H = NULL;
 	}
 	return graph;
+}
+
+void graph_free(Graph* graph) {
+	if (graph != NULL) {
+		if (graph->G != NULL) free_matrix_int(graph->G, graph->N);
+		if (graph->D != NULL) free_matrix_double(graph->D, graph->N);
+		if (graph->C != NULL) free(graph->C);
+		if (graph->S != NULL) free(graph->S);
+		if (graph->H != NULL) free(graph->H);
+		free(graph);
+	}
+}
+
+void graph_partition_nodes(Graph* G, BitSet* S_set, int m) {
+	int n = G->N - m;
+	if ((G->C = malloc(n * sizeof * (G->C))) != NULL) {
+		if ((G->S = malloc(m * sizeof * (G->S))) != NULL) {
+			int ic = 0;
+			int is = 0;
+			for (int i = 0; i < G->N; i++) {
+				if (bitset_contains(S_set, i))
+					G->S[is++] = i;
+				else
+					G->C[ic++] = i;
+			}
+			G->n = n;
+			G->m = m;
+		}
+		else {
+			printf("ERROR - Ran out of memory: graph_partition_nodes - G->S");
+			free(G->C);
+		}
+	}
+	else {
+		printf("ERROR - Ran out of memory: graph_partition_nodes - G->C");
+	}
+}
+
+void graph_add_weights(Graph* G, double* hs) {
+	G->H = hs;
 }
 
 void graph_add_from_centers_strong(Graph* G, BitSet* C_set, int m) {
@@ -66,8 +118,8 @@ void graph_add_from_centers_strong(Graph* G, BitSet* C_set, int m) {
 				V[iv++] = i;
 			}
 		}
-		G->V = V;
-		G->C = C;
+		G->C = V;
+		G->S = C;
 		G->n = G->N - m;
 		G->m = m;
 	}
@@ -82,15 +134,24 @@ void graph_add_from_centers(Graph* G, BitSet* C_set, int m) {
 			V[i] = i;
 			if (bitset_contains(C_set, i)) C[ic++] = i;
 		}
-		G->V = V;
-		G->C = C;
+		G->C = V;
+		G->S = C;
 		G->n = G->N;
 		G->m = m;
 	}
 }
 
+void graph_add_info(Graph* G, int* V, int* C, double* h, double* a, int n, int m) {
+	G->C = V;
+	G->S = C;
+	G->H = h;
+	// G->a = a;
+	G->n = n;
+	G->m = m;
+}
+
 // Read Pajek
-GraphRaw* read_pajek(char* filename, int* num_nodes) {
+GraphRaw* read_pajek_raw(char* filename, int* num_nodes) {
 	int n, m, u, v;
 	double d;
 	FILE* file;
@@ -131,6 +192,46 @@ GraphRaw* read_pajek(char* filename, int* num_nodes) {
 	return graph;
 }
 
+Graph* read_pajek(char* filename) {
+	Graph* G = graph_new();
+	int n, m, u, v;
+	double d;
+	FILE* file;
+	fopen_s(&file, filename, "r");
+	//if (fscanf_s(file, "%*s %d", &n) == 0) return NULL;
+	fscanf_s(file, "%*s %d\n", &n);
+	G->N = n;
+	if ((G->D = malloc(n * sizeof * (G->D))) == NULL) {
+		printf("ERROR - Ran out of memory: read_pajek - G->D");
+		graph_free(G);
+		return NULL;
+	}
+	for (int i = 0; i < n; i++) {
+		fscanf_s(file, "%*[^\n]\n");
+		if ((G->D[i] = malloc(n * sizeof * (G->D[i]))) != NULL) {
+			for (int j = 0; j < n; j++)
+				G->D[i][j] = INT_MAX;
+			G->D[i][i] = 0.0;
+		}
+		else {
+			printf("ERROR - Ran out of memory: read_pajek - G->D[i]");
+			graph_free(G);
+			return NULL;
+		}
+	}
+
+	fscanf_s(file, "%*s %d", &m);
+	for (int i = 0; i < m; i++) {
+		fscanf_s(file, "%d %d %lf\n", &u, &v, &d);
+		u--;
+		v--;
+		G->D[u][v] = d;
+		G->D[v][u] = d;
+	}
+	fclose(file);
+	return G;
+}
+
 double** read_pajek_dist(char* filename, int* num_nodes) {
 	double** D;
 	int n, m, u, v;
@@ -139,13 +240,13 @@ double** read_pajek_dist(char* filename, int* num_nodes) {
 	fopen_s(&file, filename, "r");
 	if (fscanf_s(file, "%*s %d ", &n) == 0) return NULL;
 	if ((D = malloc(n * sizeof * D)) == NULL) {
-		printf("ERROR - Ran out of memory: read_pajek_fw - D");
+		printf("ERROR - Ran out of memory: read_pajek_dist - D");
 	}
 	else {
 		for (int i = 0; i < n; i++) {
 			fscanf_s(file, "%*[^\n] ");
 			if ((D[i] = malloc(n * sizeof * D[i])) == NULL) {
-				printf("ERROR - Ran out of memory: read_pajek_fw - D[i]");
+				printf("ERROR - Ran out of memory: read_pajek_dist - D[i]");
 			}
 			else {
 				for (int j = 0; j < n; j++) D[i][j] = INT_MAX;
@@ -166,6 +267,61 @@ double** read_pajek_dist(char* filename, int* num_nodes) {
 	return D;
 }
 
+double** read_pajek_dist_weighted(char* filename, int* num_nodes, double** weights_ptr) {
+	double** D;
+	double* weights;
+	int n, m, u, v;
+	double d;
+	FILE* file;
+	fopen_s(&file, filename, "r");
+	if (fscanf_s(file, "%*s %d ", &n) == 0) return NULL;
+	if ((D = malloc(n * sizeof * D)) == NULL || (weights = malloc(n * sizeof * weights)) == NULL) {
+		printf("ERROR - Ran out of memory: read_pajek_fw - D");
+	}
+	else {
+		for (int i = 0; i < n; i++) {
+			// fscanf_s(file, "%*[^\n] ");
+			fscanf_s(file, "%d %*s %lf", &u, &weights[i]);
+			// weights[u - 1] = w;
+			if ((D[i] = malloc(n * sizeof * D[i])) == NULL) {
+				printf("ERROR - Ran out of memory: read_pajek_fw - D[i]");
+			}
+			else {
+				for (int j = 0; j < n; j++) D[i][j] = INT_MAX;
+				D[i][i] = 0.0;
+			}
+		}
+		fscanf_s(file, "%*s %d ", &m);
+		for (int i = 0; i < m; i++) {
+			if (i % 10000 == 0) printf("%d\n", i);
+			if (fscanf_s(file, "%d %d %lf ", &u, &v, &d) == 0) return NULL;;
+			u--;
+			v--;
+			D[u][v] = d;
+			D[v][u] = d;
+		}
+		*weights_ptr = weights;
+	}
+
+	fclose(file);
+	*num_nodes = n;
+	return D;
+}
+
+int* read_centers(char* filename, int* num_nodes) {
+	int* C;
+	int n;
+	FILE* file;
+	fopen_s(&file, filename, "r");
+	fscanf_s(file, "%d", &n);
+	if ((C = malloc(n * sizeof * C)) == NULL) return NULL;
+	for (int i = 0; i < n; i++) {
+		fscanf_s(file, "%d", &C[i]);
+	}
+	*num_nodes = n;
+	return C;
+}
+
 /// <summary>
 /// Reads from file in Pajek format and uses Floyd-Warshall algorithm
 /// to return matrix of all pairwise distances.
@@ -174,6 +330,18 @@ double** read_pajek_dist(char* filename, int* num_nodes) {
 /// <returns>Matrix of doubles.</returns>
 double** read_pajek_fw(char* filename, int* num_nodes) {
 	double** D = read_pajek_dist(filename, num_nodes);
+	floyd_warshall_algorithm(D, *num_nodes);
+	return D;
+}
+
+/// <summary>
+/// Reads from file in Pajek format and uses Floyd-Warshall algorithm
+/// to return matrix of all pairwise distances.
+/// </summary>
+/// <param name="filename">Name of Pajek file containing graph info.</param>
+/// <returns>Matrix of doubles.</returns>
+double** read_pajek_fw_weighted(char* filename, int* num_nodes, double** weights) {
+	double** D = read_pajek_dist_weighted(filename, num_nodes, weights);
 	floyd_warshall_algorithm(D, *num_nodes);
 	return D;
 }

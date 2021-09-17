@@ -95,48 +95,95 @@ void increase_index(int* idxs, int n, int k) {
 //    return minv;
 //}
 
-Result bruteforce(Graph* G, int k) {
+Result* bruteforce(Graph* G, int k, Options* options) {
+    BitSet* R = bitset_new(G->m); // Removed centers
+    Result* res = result_new();
+    double val;
+    if (k == 0) {
+        val = eval_score(G, R, options);
+        result_update(res, val, R, G->S);
+        return res;
+    }
+    else if (k == G->m) {
+        for (int i = 0; i < G->m; i++)
+            bitset_add(R, i);
+        result_update(res, INT_MAX, R, G->S);
+        return res;
+    }
+
     // Init array of indices - used for combinations
-    int* idxs = (int*)malloc(k * sizeof(int));
+    //int* idxs = (int*)malloc(k * sizeof(int));
+    int* idxs;
+    if ((idxs = malloc(k * sizeof * idxs)) == NULL) {
+        printf("ERROR - Ran out of memory: bruteforce - idxs");
+    }
     for (int i = 0; i < k; i++) {
         idxs[i] = i;
     }
 
-    // Init R (removed centers)
-    BitSet* R = bitset_new(G->N);
-
-    // Loop over all combinations
     double minv = INT_MAX;
-    double val;
-    int* best_idxs = malloc(k * sizeof(int));
-    Result res = { INT_MAX, NULL };
-    //int j = 0;
+    int* best_idxs;
+    if ((best_idxs = malloc(k * sizeof * best_idxs)) == NULL) {
+        printf("ERROR - Ran out of memory: bruteforce - best_idxs");
+        exit(1);
+    }
     for (; idxs[0] <= G->m - k; increase_index(idxs, G->m, k)) {
-        // Check result
-        //if (j++ % 1000 == 0) printf("%d\n", j);
-        //printf("%d\n", j++);
-        bitset_add_from_idxs(R, G->C, idxs, k);
-        //printf(" x ");
-        val = eval_score(G, R);
-        //printf(" x\n");
-        if (val < res.score) {
-            res.score = val;
-            save_removed_nodes(&res, R);
-            /*for (int i = 0; i < k; i++) {
-                best_idxs[i] = idxs[i];
-            }*/
+        bitset_add_from(R, idxs, k);
+        val = eval_score(G, R, options);
+        if (val < res->score) {
+            result_update(res, val, R, G->S);
         }
-
-        bitset_remove_from_idxs(R, G->C, idxs, k);
+        bitset_remove_from(R, idxs, k);
     }
-
-    /*printf("R = [");
-    for (int i = 0; i < k; i++) {
-        printf("%d ", G->C[best_idxs[i]]);
-    }
-    printf("]\n");*/
 
     free(idxs);
     bitset_free(R);
     return res;
 }
+
+// OUTDATED
+//Result bruteforce_outdated(Graph* G, int k) {
+//    // Init array of indices - used for combinations
+//    int* idxs = (int*)malloc(k * sizeof(int));
+//    for (int i = 0; i < k; i++) {
+//        idxs[i] = i;
+//    }
+//
+//    // Init R (removed centers)
+//    BitSet* R = bitset_new(G->N);
+//
+//    // Loop over all combinations
+//    double minv = INT_MAX;
+//    double val;
+//    int* best_idxs = malloc(k * sizeof(int));
+//    Result res = { INT_MAX, NULL };
+//    //int j = 0;
+//    for (; idxs[0] <= G->m - k; increase_index(idxs, G->m, k)) {
+//        // Check result
+//        //if (j++ % 1000 == 0) printf("%d\n", j);
+//        //printf("%d\n", j++);
+//        bitset_add_from_idxs(R, G->C, idxs, k);
+//        //printf(" x ");
+//        val = eval_score(G, R);
+//        //printf(" x\n");
+//        if (val < res.score) {
+//            res.score = val;
+//            save_removed_nodes(&res, R);
+//            /*for (int i = 0; i < k; i++) {
+//                best_idxs[i] = idxs[i];
+//            }*/
+//        }
+//
+//        bitset_remove_from_idxs(R, G->C, idxs, k);
+//    }
+//
+//    /*printf("R = [");
+//    for (int i = 0; i < k; i++) {
+//        printf("%d ", G->C[best_idxs[i]]);
+//    }
+//    printf("]\n");*/
+//
+//    free(idxs);
+//    bitset_free(R);
+//    return res;
+//}

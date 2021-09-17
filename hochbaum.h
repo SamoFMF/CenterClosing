@@ -3,6 +3,6 @@
 
 int random_start(Graph* G);
 
-Result hochbaum(Graph* G, int k, int (*f)(Graph* graph));
+Result* hochbaum(Graph* G, int k, Options* options);
 
 #endif

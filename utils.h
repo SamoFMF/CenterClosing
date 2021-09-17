@@ -33,4 +33,17 @@ void floyd_warshall_algorithm(double** D, int n);
 
 double** distance_matrix_new(int n);
 
+void free_matrix_double(double** M, int n);
+
+void free_matrix_int(int** M, int n);
+
+// PRINT FUNCTIONS
+void print_array_double(double* xs, int n);
+
+void print_matrix_double(double** M, int n);
+
+void print_array_int(int* xs, int n);
+
+void print_matrix_int(int** M, int n);
+
 #endif

@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="algutils.c" />
+    <ClCompile Include="backtracking.c" />
     <ClCompile Include="binaryheap.c" />
     <ClCompile Include="bitset.c" />
     <ClCompile Include="boolset.c" />
@@ -156,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="algutils.h" />
+    <ClInclude Include="backtracking.h" />
     <ClInclude Include="binaryheap.h" />
     <ClInclude Include="bitset.h" />
     <ClInclude Include="boolset.h" />

@@ -1,15 +1,19 @@
 #ifndef BITSET_H
 #define BITSET_H
 
+typedef unsigned long set_type;
+
 typedef struct BitSet {
-	unsigned long* set;
+	set_type* set;
 	int n; // number of values (bits)
-	int N; // number of unsigned longs in set
+	int N; // number of set_types in set
 	int numOfElements; // Number of bits equal 1 (TODO - currently not correct if adding an element that's already in ... check bitset_add/remove)
 	int size; // size of set entry
 } BitSet;
 
 BitSet* bitset_new(int n);
+
+BitSet* bitset_new_full(int n);
 
 void bitset_free(BitSet* bitset);
 
@@ -27,6 +31,6 @@ void bitset_remove_from(BitSet* bitset, int* xs, int n);
 
 void bitset_remove_from_idxs(BitSet* bitset, int* xs, int* idxs, int n);
 
-
+void bitset_soft_copy(BitSet* copyTo, BitSet* copyFrom);
 
 #endif

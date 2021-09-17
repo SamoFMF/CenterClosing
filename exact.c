@@ -20,7 +20,8 @@ Result recursive_exact(Graph* G, int k, BinaryHeap* heap, BitSet* R, double best
 		for (int i = 0; i < k; i++) {
 			bitset_add(R, heap->nodes[i]);
 		}
-		double eval = eval_score(G, R);
+		// double eval = eval_score(G, R); // TODO - outdated
+		double eval = 1;
 		Result res;
 		res.score = eval;
 		save_removed_nodes(&res, R);
@@ -36,7 +37,8 @@ Result recursive_exact(Graph* G, int k, BinaryHeap* heap, BitSet* R, double best
 
 		// Check if pair.node is removed
 		bitset_add(R, pair.node);
-		double eval = eval_score(G, R);
+		// double eval = eval_score(G, R); // TODO - outdated
+		double eval = 1;
 		Result res;
 		res.score = INT_MAX;
 		res.R = NULL;
@@ -144,13 +146,14 @@ Result exact_final_recursive(Graph* G, int k, BinaryHeap* queue, BitSet* R, Cent
 	}
 	else if (queue->n == k) {
 		// All remaining elements of heap must be removed as centers
+		Options* options = options_new();
 		int center;
 		double eval;
 		double eval_max = cur_eval;
 		for (int i = 0; i < k; i++) {
 			// Take top k nodes from queue (last remaining elements)
 			center = queue->nodes[i];
-			eval = centers_redistribute(centers, G, R, reverse_center_map[center]);
+			eval = centers_redistribute(centers, G, R, reverse_center_map[center], options); // Outdated - just added options
 			bitset_add(R, center);
 			if (eval > eval_max) eval_max = eval;
 		}
@@ -177,6 +180,8 @@ Result exact_final_recursive(Graph* G, int k, BinaryHeap* queue, BitSet* R, Cent
 		// Pop best from queue
 		PairIntDouble pair = binary_heap_extract_min(queue);
 
+		Options* options = options_new(); // TODO - temp, outdated
+
 
 		// Prep results
 		Result res, res_tmp;
@@ -188,7 +193,7 @@ Result exact_final_recursive(Graph* G, int k, BinaryHeap* queue, BitSet* R, Cent
 		if (res.score < best) best = res.score;
 
 		// Check if center `pair.node` is removed
-		double eval = centers_redistribute(centers, G, R, reverse_center_map[pair.node]); // Remove pair.node and distribute its nodes to their new nearest centers
+		double eval = centers_redistribute(centers, G, R, reverse_center_map[pair.node], options); // Remove pair.node and distribute its nodes to their new nearest centers
 		int revert = 0; // Should we revert queue updates? 0 = No, 1 = Yes
 		double value;
 		if (eval < cur_eval) eval = cur_eval;
@@ -250,7 +255,10 @@ Result exact_final_recursive(Graph* G, int k, BinaryHeap* queue, BitSet* R, Cent
 
 Result exact_final(Graph* G, int k, PriorityFunction* priority_function) {
 	// Create centers
-	Center** centers = centers_new_from_graph(G);
+
+	// OUTDATED
+	Options* options = options_new();
+	Center** centers = centers_new_from_graph(G, options);
 
 	// Create vals - TODO - glej zgoraj
 	// TODO 2 - uporabi centers[...]->history->val, potem pa dodaj se, da se posodablja ob spremembah!

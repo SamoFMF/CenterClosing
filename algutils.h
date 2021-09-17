@@ -5,19 +5,14 @@
 #include "bitset.h"
 #include "utils.h"
 
-// Result related
+double f(Graph* G, int i_node, int j_center);
+
+// Structs
 typedef struct Result {
 	double score;
 	int* R;
 } Result;
 
-void result_free(Result* result);
-
-double eval_score(Graph* G, BitSet* R);
-
-void save_removed_nodes(Result* res, BitSet* R);
-
-// Center related
 typedef struct Center {
 	int* nodes; // Nodes for which Center is the closest center
 	int numOfNodes; // Number of elements in `nodes`
@@ -25,6 +20,27 @@ typedef struct Center {
 	LinkedList* history; // Centers score (max dist to node in `nodes`)
 } Center;
 
+typedef struct Options {
+	double (*eval)(int c, int s, Graph* G);
+	int (*get_first)(Graph* G);
+	double (*get_priority)(Center* center);
+} Options;
+
+// Result related
+Result* result_new();
+
+void result_free(Result* result);
+
+void result_update(Result* result, double val, BitSet* R, int* S);
+
+double eval_score(Graph* G, BitSet* R, Options* options);
+
+void save_removed_nodes(Result* res, BitSet* R);
+
+// Options related
+Options* options_new();
+
+// Center related
 Center* center_new(int n);
 
 void center_free(Center* center);
@@ -35,12 +51,12 @@ void center_resize(Center* center);
 
 void center_add(Center* center, int node);
 
-Center** centers_new_from_graph(Graph* G);
+Center** centers_new_from_graph(Graph* G, Options* options);
 
-double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx);
+double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Options* options);
 
 void centers_redistribute_undo(Center** centers, int n);
 
-void centers_redistribute_closest(Center** centers, Graph* G, BitSet* R, int idx, int* closest);
+void centers_redistribute_closest(Center** centers, Graph* G, int idx, int* closest, Options* options);
 
 #endif

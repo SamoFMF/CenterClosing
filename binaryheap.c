@@ -46,6 +46,54 @@ BinaryHeap* binary_heap_new(int* xs, double* vals, int n, int m) {
 	return heap;
 }
 
+BinaryHeap* binary_heap_new_test(int* xs, double* vals, int n) {
+	BinaryHeap* heap;
+	if ((heap = malloc(sizeof * heap)) != NULL) {
+		if ((heap->heap = malloc(n * sizeof * heap->heap)) != NULL && (heap->nodes = malloc(n * sizeof * heap->nodes)) != NULL && (heap->loc = malloc(n * sizeof * heap->loc)) != NULL) {
+			heap->n = n;
+			for (int i = 0; i < n; i++) {
+				heap->heap[i] = vals[i];
+				heap->nodes[i] = xs[i];
+				heap->loc[xs[i]] = i;
+			}
+			for (int i = n / 2 - 1; i >= 0; i--) {
+				min_heapify(heap, i);
+			}
+		}
+		else {
+			printf("ERROR - Ran out of memory: binary_heap_new_test - inner\n");
+		}
+	}
+	else {
+		printf("ERROR - Ran out of memory: binary_heap_new_test - heap\n");
+	}
+	return heap;
+}
+
+BinaryHeap* binary_heap_new_range(double* vals, int n) {
+	BinaryHeap* heap;
+	if ((heap = malloc(sizeof * heap)) != NULL) {
+		if ((heap->heap = malloc(n * sizeof * heap->heap)) != NULL && (heap->nodes = malloc(n * sizeof * heap->nodes)) != NULL && (heap->loc = malloc(n * sizeof * heap->loc)) != NULL) {
+			heap->n = n;
+			for (int i = 0; i < n; i++) {
+				heap->heap[i] = vals[i];
+				heap->nodes[i] = i;
+				heap->loc[i] = i;
+			}
+			for (int i = n / 2 - 1; i >= 0; i--) {
+				min_heapify(heap, i);
+			}
+		}
+		else {
+			printf("ERROR - Ran out of memory: binary_heap_new_test - inner\n");
+		}
+	}
+	else {
+		printf("ERROR - Ran out of memory: binary_heap_new_test - heap\n");
+	}
+	return heap;
+}
+
 void binary_heap_free(BinaryHeap* heap) {
 	free(heap->heap);
 	free(heap->nodes);
@@ -53,6 +101,7 @@ void binary_heap_free(BinaryHeap* heap) {
 }
 
 PairIntDouble binary_heap_extract_min(BinaryHeap* heap) {
+	// TODO - preveri, kaj se zgodi, ce extractas zadnji element!!!
 	// Get node with min value
 	int node = heap->nodes[0];
 	double value = heap->heap[0];
@@ -121,6 +170,7 @@ void binary_heap_increase_key(BinaryHeap* heap, int node, double value) {
 }
 
 void binary_heap_update_key(BinaryHeap* heap, int node, double value) {
+	// TODO - premisli, ce prav za increase pa decrease: heapify vs heapify_up
 	// Find node
 	int i = binary_heap_search(heap, node);
 	if (i >= heap->n) return;
