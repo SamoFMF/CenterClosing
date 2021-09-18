@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "graph.h"
+#include "algutils.h"
 
 // Raw graphs (from pajek files)
 GraphRaw* graph_raw_new(int n) {
@@ -148,6 +149,98 @@ void graph_add_info(Graph* G, int* V, int* C, double* h, double* a, int n, int m
 	// G->a = a;
 	G->n = n;
 	G->m = m;
+}
+
+typedef struct Comparator {
+	Graph* G;
+	Options* options;
+	int is_center;
+	int idx;
+} Comparator;
+
+Comparator* comparator_new(Graph* G, Options* options) {
+	Comparator* comparator;
+	if ((comparator = malloc(sizeof * comparator)) != NULL) {
+		comparator->G = G;
+		comparator->options = options;
+	}
+	else
+		printf("EROR - Ran out of memory: comparator_new");
+	return comparator;
+}
+
+void comparator_update(Comparator* comparator, int idx, int is_center) {
+	comparator->idx = idx;
+	comparator->is_center = is_center;
+}
+
+void comparator_free(Comparator* comparator) {
+	free(comparator);
+}
+
+//int compare_adj_list(void* cont, const void* x, const void* y) {
+//	double* cont1 = cont;
+//	if (cont1 == NULL) printf("NULL!");
+//	double f = cont1[*((int*)x)];
+//	double s = cont1[*((int*)y)];
+//	if (f > s) return 1;
+//	if (f < s) return -1;
+//	return 0;
+//}
+
+int compare_adj_list(void* cont, const void* xin, const void* yin) {
+	Comparator* comp = cont;
+	if (comp == NULL) printf("NULL!");
+	int x = *((int*)xin);
+	int y = *((int*)yin);
+	double f, s;
+	if (comp->is_center) {
+		f = comp->options->eval(x, comp->idx, comp->G);
+		s = comp->options->eval(y, comp->idx, comp->G);
+	}
+	else {
+		f = comp->options->eval(comp->idx, x, comp->G);
+		s = comp->options->eval(comp->idx, y, comp->G);
+	}
+	if (f > s) return 1;
+	if (f < s) return -1;
+	return 0;
+}
+
+void graph_add_sorted_adjacency_list(Graph* G, Options* options) {
+	int c, s;
+	if (G->G != NULL) {
+		// TODO - free G->G
+		for (int i = 0; i < G->N; i++)
+			if (G->G[i] != NULL)
+				free(G->G[i]);
+		free(G->G);
+	}
+	if ((G->G = malloc(G->N * sizeof * G->G)) != NULL) {
+		Comparator* comparator = comparator_new(G, options);
+		for (int ic = 0; ic < G->n; ic++) {
+			c = G->C[ic];
+			if ((G->G[c] = malloc(G->m * sizeof * G->G[c])) != NULL) {
+				for (int is = 0; is < G->m; is++)
+					//G->G[c][is] = G->S[is];
+					G->G[c][is] = is;
+				comparator_update(comparator, ic, 0);
+				qsort_s(G->G[c], G->m, sizeof * G->G[c], compare_adj_list, comparator);
+			} else
+				printf("ERROR - Ran out of memory: graph_add_sorted_adjacency_list - G->G[c]\n");
+		}
+		for (int is = 0; is < G->m; is++) {
+			s = G->S[is];
+			if ((G->G[s] = malloc(G->n * sizeof * G->G[s])) != NULL) {
+				for (int ic = 0; ic < G->n; ic++)
+					//G->G[s][ic] = G->C[ic];
+					G->G[s][ic] = ic;
+				comparator_update(comparator, is, 1);
+				qsort_s(G->G[s], G->n, sizeof * G->G[s], compare_adj_list, comparator);
+			} else
+				printf("ERROR - Ran out of memory: graph_add_sorted_adjacency_list - G->G[s]\n");
+		}
+	}
 }
 
 // Read Pajek

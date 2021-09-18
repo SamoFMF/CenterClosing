@@ -463,3 +463,42 @@ void centers_redistribute_closest(Center** centers, Graph* G, int idx, int* clos
 //        }
 //    }
 //}
+
+// Distance related
+int compare_dists(const void* x, const void* y) {
+    double f = *((double*)x);
+    double s = *((double*)y);
+    if (f > s) return 1;
+    if (f < s) return -1;
+    return 0;
+}
+
+double* get_sorted_distances_no_duplicates(Graph* G, int* new_len, Options* options) {
+    double* dists;
+    int len = G->n * G->m;
+    int idx = 0;
+    if ((dists = malloc(len * sizeof * dists)) != NULL) {
+        for (int i = 0; i < G->n; i++) {
+            for (int j = 0; j < G->m; j++) {
+                dists[idx++] = options->eval(i, j, G);
+            }
+        }
+        qsort(dists, len, sizeof * dists, compare_dists);
+        idx = 0;
+        for (int i = 1; i < len; i++) {
+            if (dists[i] > dists[idx]) {
+                idx++;
+                dists[idx] = dists[i];
+            }
+        }
+        if (idx < len) {
+            if (realloc(dists, (idx + 1) * sizeof * dists) == NULL)
+                printf("ERROR - Reallocating memory: get_sorted_distances_no_duplicates");
+            else
+                *new_len = idx + 1;
+        }
+    }
+    else
+        printf("ERROR - Ran out of memory: get_sorted_distances_no_duplicates - dists");
+    return dists;
+}

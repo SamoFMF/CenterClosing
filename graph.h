@@ -3,6 +3,9 @@
 
 #include "bitset.h"
 #include "utils.h"
+#include "algutils.h"
+
+typedef struct Options Options;
 
 // Graph Raw
 typedef struct GraphRaw {
@@ -38,6 +41,8 @@ void graph_add_from_centers_strong(Graph* G, BitSet* C_set, int m);
 void graph_add_from_centers(Graph* G, BitSet* C_set, int m);
 
 void graph_add_info(Graph* G, int* V, int* C, double* h, double* a, int n, int m);
+
+void graph_add_sorted_adjacency_list(Graph* G, Options* options);
 
 // Pajek
 GraphRaw* read_pajek_raw(char* filename, int* num_nodes);

@@ -5,7 +5,9 @@
 #include "bitset.h"
 #include "utils.h"
 
-double f(Graph* G, int i_node, int j_center);
+//double f(Graph* G, int i_node, int j_center);
+
+typedef struct Graph Graph;
 
 // Structs
 typedef struct Result {
@@ -58,5 +60,8 @@ double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Opti
 void centers_redistribute_undo(Center** centers, int n);
 
 void centers_redistribute_closest(Center** centers, Graph* G, int idx, int* closest, Options* options);
+
+// Distance related
+double* get_sorted_distances_no_duplicates(Graph* G, int* new_len, Options* options);
 
 #endif

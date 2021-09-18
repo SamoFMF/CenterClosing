@@ -88,6 +88,18 @@ void print_result(char* name, Result* R, int k) {
 //    return 0;
 //}
 
+int mycompare(void* cont, const void* x, const void* y) {
+    double* cont1 = cont;
+    if (cont1 == NULL) printf("NULL!");
+    double f = cont1[*((int*)x)];
+    double s = cont1[*((int*)y)];
+    if (f > s) return 1;
+    if (f < s) return -1;
+    return 0;
+}
+    
+// qsort_s(idxs, G->n, sizeof(int), compare, G->H);
+
 double test_eval(int c, int s, Graph* G) {
     return G->D[G->C[c]][G->S[s]];
 }
@@ -193,6 +205,22 @@ int main() {
 
     res4 = hochbaum(G, k, options);
     print_result("hochbaum", res4, k);
+
+    printf("DONE\n\n");
+
+    graph_add_sorted_adjacency_list(G, options);
+
+    BitSet* X = range_adj(G, k, 190, options);
+    if (X == NULL)
+        printf("X = NULL\n");
+    else {
+        Result* res5 = result_new();
+        result_update(res5, 0, X, G->S);
+        print_result("test", res5, k);
+    }
+
+    Result* res6 = decision_to_optimization(G, k, options, range_adj);
+    print_result("dec_to_opt", res6, k);
 
     return 0;
 }
