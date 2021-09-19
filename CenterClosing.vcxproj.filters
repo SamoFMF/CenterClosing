@@ -78,6 +78,9 @@
     <ClCompile Include="backtracking.c">
       <Filter>Source Files\algorithms</Filter>
     </ClCompile>
+    <ClCompile Include="herustic.c">
+      <Filter>Source Files\algorithms</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bruteforce.h">
@@ -120,6 +123,9 @@
       <Filter>Header Files\algorithms</Filter>
     </ClInclude>
     <ClInclude Include="backtracking.h">
+      <Filter>Header Files\algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="heuristic.h">
       <Filter>Header Files\algorithms</Filter>
     </ClInclude>
   </ItemGroup>

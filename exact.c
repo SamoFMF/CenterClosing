@@ -258,7 +258,8 @@ Result exact_final(Graph* G, int k, PriorityFunction* priority_function) {
 
 	// OUTDATED
 	Options* options = options_new();
-	Center** centers = centers_new_from_graph(G, options);
+	double temp_val;
+	Center** centers = centers_new_from_graph(G, options, &temp_val);
 
 	// Create vals - TODO - glej zgoraj
 	// TODO 2 - uporabi centers[...]->history->val, potem pa dodaj se, da se posodablja ob spremembah!

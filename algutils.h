@@ -53,7 +53,7 @@ void center_resize(Center* center);
 
 void center_add(Center* center, int node);
 
-Center** centers_new_from_graph(Graph* G, Options* options);
+Center** centers_new_from_graph(Graph* G, Options* options, double* eval);
 
 double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Options* options);
 

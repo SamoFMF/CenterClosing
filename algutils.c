@@ -186,7 +186,7 @@ void center_add(Center* center, int node) {
 //    return centers;
 //}
 
-Center** centers_new_from_graph(Graph* G, Options* options) {
+Center** centers_new_from_graph(Graph* G, Options* options, double* eval) {
     Center** centers;
     if ((centers = malloc(G->m * sizeof * centers)) == NULL) {
         printf("ERROR - Ran out of memory: centers_new_from_graph - centers");
@@ -216,8 +216,13 @@ Center** centers_new_from_graph(Graph* G, Options* options) {
             centers[min_idx]->history->val = dmin;
     }
 
-    for (int i = 0; i < G->m; i++)
+    double dmax = -1;
+    for (int i = 0; i < G->m; i++) {
         center_resize(centers[i]);
+        if (centers[i]->history->val > dmax)
+            dmax = centers[i]->history->val;
+    }
+    *eval = dmax;
 
     return centers;
 }

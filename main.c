@@ -15,6 +15,7 @@
 #include "hochbaum.h"
 #include "plesnik.h"
 #include "backtracking.h"
+#include "heuristic.h"
 
 int create_D(double** D) {
     double x = 100;
@@ -155,6 +156,16 @@ int main() {
     Result* res4 = hochbaum(G, k, options);
     print_result("hochbaum", res4, k);
 
+    graph_add_sorted_adjacency_list(G, options);
+    Result* res5 = decision_to_optimization(G, k, options, range_adj);
+    print_result("dec_to_opt", res5, k);
+
+    Result* res6 = cluster_cardinality(G, k, options);
+    print_result("cardinality", res6, k);
+
+    Result* res7 = cluster_radius(G, k, options);
+    print_result("radius", res7, k);
+
     graph_free(G);
     bitset_free(S_set);
     free(S_arr);
@@ -164,6 +175,9 @@ int main() {
     result_free(res2);
     result_free(res3);
     result_free(res4);
+    result_free(res5);
+    result_free(res6);
+    result_free(res7);
 
     // Primer 2: data/moj1.net
     printf("\n\n");
@@ -206,21 +220,27 @@ int main() {
     res4 = hochbaum(G, k, options);
     print_result("hochbaum", res4, k);
 
-    printf("DONE\n\n");
+    // printf("DONE\n\n");
 
     graph_add_sorted_adjacency_list(G, options);
 
-    BitSet* X = range_adj(G, k, 190, options);
+    /*BitSet* X = range_adj(G, k, 190, options);
     if (X == NULL)
         printf("X = NULL\n");
     else {
         Result* res5 = result_new();
         result_update(res5, 0, X, G->S);
         print_result("test", res5, k);
-    }
+    }*/
 
-    Result* res6 = decision_to_optimization(G, k, options, range_adj);
-    print_result("dec_to_opt", res6, k);
+    res5 = decision_to_optimization(G, k, options, range_adj);
+    print_result("dec_to_opt", res5, k);
+
+    res6 = cluster_cardinality(G, k, options);
+    print_result("cardinality", res6, k);
+
+    res7 = cluster_radius(G, k, options);
+    print_result("radius", res7, k);
 
     return 0;
 }

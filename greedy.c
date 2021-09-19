@@ -191,7 +191,9 @@ double test_k1(Graph* G, BitSet* R, Center** centers, Options* options) {
 //}
 
 Result* greedy_centers(Graph* G, int k, Options* options) {
-	Center** centers = centers_new_from_graph(G, options);
+	// TODO - premisli, ce nam ta vrednost olajsa delo v rekurziji spodaj
+	double temp_val;
+	Center** centers = centers_new_from_graph(G, options, &temp_val);
 	BitSet* R = bitset_new(G->m);
 	Result* res = result_new();
 

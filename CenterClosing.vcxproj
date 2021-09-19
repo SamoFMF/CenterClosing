@@ -149,6 +149,7 @@
     <ClCompile Include="graph.c" />
     <ClCompile Include="graphgenerators.c" />
     <ClCompile Include="greedy.c" />
+    <ClCompile Include="herustic.c" />
     <ClCompile Include="hochbaum.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="plesnik.c" />
@@ -165,6 +166,7 @@
     <ClInclude Include="exact.h" />
     <ClInclude Include="graph.h" />
     <ClInclude Include="greedy.h" />
+    <ClInclude Include="heuristic.h" />
     <ClInclude Include="hochbaum.h" />
     <ClInclude Include="plesnik.h" />
     <ClInclude Include="priorityfunctions.h" />
