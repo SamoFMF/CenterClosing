@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include "graph.h"
 #include "bitset.h"
 #include "algutils.h"
@@ -24,7 +25,7 @@ Result* result_new() {
     Result* result;
     if ((result = malloc(sizeof * result)) != NULL) {
         result->R = NULL;
-        result->score = INT_MAX;
+        result->score = DBL_MAX;
     }
     else {
         printf("ERROR: Ran out of memory - result_new");
@@ -55,14 +56,14 @@ void result_update(Result* result, double val, BitSet* R, int* S) {
 
 // Result related
 double eval_score(Graph* G, BitSet* R, Options* options) {
-    int c, s;
+    //int c, s;
     double mind, maxd, d;
     maxd = -1;
     for (int ic = 0; ic < G->n; ic++) {
-        c = G->C[ic];
-        mind = INT_MAX;
+        //c = G->C[ic];
+        mind = DBL_MAX;
         for (int is = 0; is < G->m; is++) {
-            s = G->S[is];
+            //s = G->S[is];
             if (!bitset_contains(R, is)) {
                 d = options->eval(ic, is, G);
                 if (d < mind)
@@ -128,6 +129,7 @@ Center* center_new(int n) {
 
 void center_free(Center* center) {
     free(center->nodes);
+    linkedlist_free_all(center->history);
     free(center);
 }
 
@@ -140,51 +142,14 @@ void centers_free(Center** centers, int n) {
 
 void center_resize(Center* center) {
     if ((center->nodes = realloc(center->nodes, (center->numOfNodes + center->delta) * sizeof * center->nodes)) == NULL) {
-        printf("ERROR - center_resize");
+        if (center->numOfNodes + center->delta != 0)
+            printf("ERROR - center_resize");
     }
 }
 
 void center_add(Center* center, int node) {
     center->nodes[center->numOfNodes++] = node;
 }
-
-//Center** centers_new_from_graph(Graph* G) {
-//    Center** centers;
-//    if ((centers = malloc(G->m * sizeof * centers)) == NULL) {
-//        printf("ERROR - Ran out of memory: centers_new_from_graph - centers");
-//        return centers;
-//    }
-//    for (int i = 0; i < G->m; i++) {
-//        centers[i] = center_new(G->n);
-//    }
-//
-//    double dist, min_dist;
-//    int min_idx;
-//    int u, v;
-//    for (int i = 0; i < G->n; i++) {
-//        u = G->C[i];
-//        min_dist = INT_MAX;
-//        for (int j = 0; j < G->m; j++) {
-//            v = G->C[j];
-//            dist = G->D[u][v];
-//            if (dist < min_dist) {
-//                min_dist = dist;
-//                min_idx = j;
-//            }
-//        }
-//        v = G->C[min_idx];
-//        center_add(centers[min_idx], u);
-//        if (centers[min_idx]->history->val < min_dist) {
-//            centers[min_idx]->history->val = min_dist;
-//        }
-//    }
-//
-//    for (int i = 0; i < G->m; i++) {
-//        center_resize(centers[i]);
-//    }
-//
-//    return centers;
-//}
 
 Center** centers_new_from_graph(Graph* G, Options* options, double* eval) {
     Center** centers;
@@ -201,7 +166,7 @@ Center** centers_new_from_graph(Graph* G, Options* options, double* eval) {
     int c, s;
     for (int i = 0; i < G->n; i++) {
         c = G->C[i];
-        dmin = INT_MAX;
+        dmin = DBL_MAX;
         for (int j = 0; j < G->m; j++) {
             s = G->S[j];
             dist = options->eval(i, j, G);
@@ -239,6 +204,20 @@ void centers_resize(Center** centers, int n) {
     }
 }
 
+void centers_resize_oneway(Center** centers, int n) {
+    Center* center;
+    for (int i = 0; i < n; i++) {
+        center = centers[i];
+        if (center->delta > 0) { // Prej smo imeli se i != idx, kjer je idx trenutno obravnavan v centers_redistribute, ampak takrat bi mogla vedno biti delta = 0
+            center->history = linkedlist_next(center->history, center->delta);
+            linkedlist_free(center->history->prev);
+            center->history->prev = NULL;
+            center_resize(center);
+            center->delta = 0;
+        }
+    }
+}
+
 /** @brief Redistribute nodes from center to remaining centers
 *
 * Redistributes nodes for which i-th center is the closest center, to the
@@ -264,7 +243,7 @@ double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Opti
     // Update deltas & fill in closest
     for (int i = 0; i < center->numOfNodes; i++) {
         c = center->nodes[i];
-        dmin = INT_MAX;
+        dmin = DBL_MAX;
 
         // Find new closest
         for (int j = 0; j < G->m; j++) {
@@ -302,72 +281,6 @@ double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Opti
     return dmax;
 }
 
-double centers_redistribute_outdated(Center** centers, Graph* G, BitSet* R, int idx) { // TODO - outdated, update with options etc.
-    int node, cnode, idxmin;
-    double dmin, dist;
-    double dmax = -1;
-    Center* center;
-
-    int* closest;
-    if ((closest = malloc(centers[idx]->numOfNodes * sizeof * closest)) == NULL) {
-        printf("ERROR: Ran out of memory - centers_redistribute - closest");
-    }
-
-    // Update deltas
-    for (int i = 0; i < centers[idx]->numOfNodes; i++) {
-        node = centers[idx]->nodes[i];
-        dmin = INT_MAX;
-
-        // Find new closest
-        for (int j = 0; j < G->m; j++) {
-            if (j == idx) continue;
-            cnode = G->C[j];
-            if (!bitset_contains(R, cnode)) {
-                dist = G->D[node][cnode];
-                if (dist < dmin) {
-                    dmin = dist;
-                    idxmin = j;
-                }
-            }
-        }
-        centers[idxmin]->delta++;
-        closest[i] = idxmin;
-    }
-
-    // Resize centers
-    for (int i = 0; i < G->m; i++) {
-        center = centers[i];
-        center->history = linkedlist_next(center->history, center->delta);
-        if (i != idx && center->delta > 0) {
-            //printf("Step 3.1 %d %d\n", i, center->delta);
-            //realloc(center->nodes, (center->numOfNodes + center->delta) * sizeof * center->nodes);
-            center_resize(center);
-            //printf("Step 3.2 %d %d\n", i, center->delta);
-            centers[i]->delta = 0;
-        }
-    }
-
-    //printf("Step 4\n");
-
-    // Add new nodes
-    for (int i = 0; i < centers[idx]->numOfNodes; i++) {
-        center = centers[closest[i]];
-        cnode = G->C[closest[i]];
-        node = centers[idx]->nodes[i];
-        // center_add(center, centers[idx]->nodes[i]);
-        center_add(center, node);
-        dist = G->D[node][cnode];
-        if (dist > center->history->val) {
-            center->history->val = dist;
-            if (dist > dmax) {
-                dmax = dist;
-            }
-        }
-    }
-    
-    return dmax; // TODO - premisli, ce je dovolj, da je to max od novih vrednosti, ki pokvarijo trenutno vrednost, ali potrebujemo vse
-}
-
 void centers_redistribute_undo(Center** centers, int n) {
     Center* center;
 
@@ -378,6 +291,57 @@ void centers_redistribute_undo(Center** centers, int n) {
         center->history = linkedlist_remove_last(center->history);
         center_resize(center);
     }
+}
+
+double centers_redistribute_oneway(Center** centers, Graph* G, BitSet* R, int idx, Options* options) {
+    int c, s;
+    double dist, dmin, dmax;
+    Center* center = centers[idx];
+
+    int* closest;
+    if ((closest = malloc(center->numOfNodes * sizeof * closest)) == NULL) {
+        printf("ERROR - Ran out of memory: centers_redistribute\n");
+    }
+
+    // Update deltas & fill in closest
+    for (int i = 0; i < center->numOfNodes; i++) {
+        c = center->nodes[i];
+        dmin = DBL_MAX;
+
+        // Find new closest
+        for (int j = 0; j < G->m; j++) {
+            if (!bitset_contains(R, j) && j != idx) {
+                dist = options->eval(c, j, G);
+                if (dist < dmin) {
+                    dmin = dist;
+                    s = j;
+                }
+            }
+        }
+
+        centers[s]->delta++;
+        closest[i] = s;
+    }
+
+    // Resize centers
+    centers_resize_oneway(centers, G->m);
+
+    // Redistribute consumers
+    dmax = -1;
+    for (int i = 0; i < centers[idx]->numOfNodes; i++) {
+        c = centers[idx]->nodes[i];
+        s = closest[i];
+        center = centers[s];
+        center_add(center, c);
+        dist = options->eval(c, s, G);
+        if (dist > center->history->val) {
+            center->history->val = dist;
+            if (dist > dmax)
+                dmax = dist;
+        }
+    }
+
+    return dmax;
 }
 
 /** @brief Redistribute nodes from center to remaining centers
@@ -417,7 +381,7 @@ void centers_redistribute_closest(Center** centers, Graph* G, int idx, int* clos
     int inode, icenter;
     for (int i = 0; i < centers[idx]->numOfNodes; i++) {
         inode = centers[idx]->nodes[i];
-        icenter = closest[inode]; // TODO - premisli, ce je to okej. Ce je, morda naredi preko indeksov in zmanjsas closest?
+        icenter = closest[inode]; // TODO - premisli, ce je to okej. Ce je, morda naredi preko indeksov in zmanjsas closest? (DONE)
         center = centers[icenter];
         center_add(center, inode);
         dist = options->eval(inode, icenter, G);
@@ -497,7 +461,7 @@ double* get_sorted_distances_no_duplicates(Graph* G, int* new_len, Options* opti
             }
         }
         if (idx < len) {
-            if (realloc(dists, (idx + 1) * sizeof * dists) == NULL)
+            if ((dists = realloc(dists, (idx + 1) * sizeof * dists)) == NULL)
                 printf("ERROR - Reallocating memory: get_sorted_distances_no_duplicates");
             else
                 *new_len = idx + 1;

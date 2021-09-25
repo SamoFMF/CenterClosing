@@ -22,11 +22,14 @@ typedef struct Center {
 	LinkedList* history; // Centers score (max dist to node in `nodes`)
 } Center;
 
-typedef struct Options {
+typedef struct Options Options;
+
+struct Options {
 	double (*eval)(int c, int s, Graph* G);
-	int (*get_first)(Graph* G);
+	int (*get_first)(Graph* G, Options* options);
 	double (*get_priority)(Center* center);
-} Options;
+	int hochbaum_start_center; // Used for HochbaumPlus
+};
 
 // Result related
 Result* result_new();
@@ -58,6 +61,8 @@ Center** centers_new_from_graph(Graph* G, Options* options, double* eval);
 double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Options* options);
 
 void centers_redistribute_undo(Center** centers, int n);
+
+double centers_redistribute_oneway(Center** centers, Graph* G, BitSet* R, int idx, Options* options);
 
 void centers_redistribute_closest(Center** centers, Graph* G, int idx, int* closest, Options* options);
 

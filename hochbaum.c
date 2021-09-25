@@ -1,27 +1,52 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "graph.h"
-#include "utils.h"
+#include <float.h>
 #include "algutils.h"
+#include "bitset.h"
+#include "graph.h"
+#include "hochbaum.h"
+#include "utils.h"
 
-//int random_start(Graph* G) {
-//	int node = rand_lim(G->n);
-//	int center, cmin;
-//	double dist;
-//	double dmin = INT_MAX;
-//	for (int i = 0; i < G->m; i++) {
-//		center = G->C[i];
-//		dist = G->D[node][center];
-//		if (dist < dmin) {
-//			dmin = dist;
-//			cmin = center;
-//		}
-//	}
-//	return cmin;
-//}
+int hochbaum_start_random(Graph* G, Options* options) {
+	// Get random consumer
+	int c = rand_lim(G->n);
 
-int random_start(Graph* G) {
-	return rand_lim(G->n);
+	// Return closest supplier to consumer c
+	double dmin = DBL_MAX;
+	double dist;
+	int s;
+	for (int is = 0; is < G->m; is++) {
+		dist = options->eval(c, is, G);
+		if (dist < dmin) {
+			dmin = dist;
+			s = is;
+		}
+	}
+	return s;
+}
+
+int hochbaum_start_best(Graph* G, Options* options) {
+	int sbest = 0;
+	double val;
+	double vmin = DBL_MAX;
+	double dist, dmax;
+	for (int s = 0; s < G->m; s++) {
+		dmax = -1;
+		for (int is = 0; is < G->m; is++) {
+			if (is != s)
+				for (int ic = 0; ic < G->n; ic++) {
+					dist = options->eval(ic, is, G);
+					if (dist > dmax)
+						dmax = dist;
+				}
+		}
+		if (dmax < vmin) {
+			vmin = dmax;
+			sbest = s;
+		}
+	}
+
+	return sbest;
 }
 
 /** @brief 3-approximation algorithm based on Hochbaum
@@ -31,25 +56,17 @@ int random_start(Graph* G) {
 *
 * @param G Pointer to Graph struct.
 * @param k Number of centers to be removed.
-* @param f Function used to calculate the first center to add.
+* @param options Algorithm options.
+* @param get_first_center Function used to calculate the first center to be covered.
 *
 * @return Result Approximation of the problem solution.
 */
 Result* hochbaum(Graph* G, int k, Options* options) {
-	int c, s;
+	int c;
 	double dist, dmin, dmax;
-	
-	c = options->get_first(G);
-	dmin = INT_MAX;
-	for (int i = 0; i < G->m; i++) {
-		dist = options->eval(c, i, G);
-		if (dist < dmin) {
-			dmin = dist;
-			s = i;
-		}
-	}
-	// BitSet* R = bitset_new(G->m);
-	// bitset_add_from(R, G->S, G->m); // TODO - maybe add "bitset_new_full" which creates a bitset with every element already in, should be faster to just set values to max
+
+	int s = options->get_first(G, options);
+
 	BitSet* R = bitset_new_full(G->m);
 	bitset_remove(R, s);
 	int* covered; // Already covered centers - somewhat redundant but speeds up the process of finding the furthest consumer
@@ -62,7 +79,7 @@ Result* hochbaum(Graph* G, int k, Options* options) {
 		// Find c furthest from S\R
 		dmax = -1;
 		for (int ic = 0; ic < G->n; ic++) {
-			dmin = INT_MAX;
+			dmin = DBL_MAX;
 			for (int is = 0; is < i + 1; is++) {
 				dist = options->eval(ic, covered[is], G);
 				if (dist < dmin)
@@ -75,7 +92,7 @@ Result* hochbaum(Graph* G, int k, Options* options) {
 		}
 
 		// Find s closest to c from R
-		dmin = INT_MAX;
+		dmin = DBL_MAX;
 		for (int is = 0; is < G->m; is++) {
 			if (bitset_contains(R, is)) {
 				dist = options->eval(c, is, G);
@@ -92,7 +109,7 @@ Result* hochbaum(Graph* G, int k, Options* options) {
 	// Eval R
 	dmax = -1;
 	for (int c = 0; c < G->n; c++) {
-		dmin = INT_MAX;
+		dmin = DBL_MAX;
 		for (int is = 0; is < G->m - k; is++) {
 			dist = options->eval(c, covered[is], G);
 			if (dist < dmin)
@@ -111,63 +128,29 @@ Result* hochbaum(Graph* G, int k, Options* options) {
 	return res;
 }
 
-Result hochbaum_outdated(Graph* G, int k, int (*f)(Graph* graph)) {
-	int k1 = G->m - k;
-	// Array of added centers
-	int* Carr;
-	if ((Carr = malloc(k1 * sizeof * Carr)) == NULL) {
-		printf("ERROR - Ran out of memory: hochbaum - Rarr");
-	}
+int hochbaum_start_plus(Graph* G, Options* options) {
+	return options->hochbaum_start_center++;
+}
 
-	// Get first center to remove
-	// Carr[0] = f(G);
-
-	int node, center;
-	int vmax, closest;
-	double dmax, dist, dmin;
-	closest = f(G);
-	for (int ki = 0; ki < k1; ki++) {
-		// Add to Carr
-		Carr[ki] = closest;
-
-		// Find the furthest node
-		dmax = -1.0;
-		for (int i = 0; i < G->n; i++) {
-			node = G->C[i];
-			dmin = INT_MAX;
-			for (int j = 0; j < ki + 1; j++) {
-				center = Carr[j];
-				dist = G->D[node][center];
-				if (dist < dmin) dmin = dist;
-			}
-			if (dmin > dmax) {
-				dmax = dmin;
-				vmax = G->C[i];
-			}
+Result* hochbaum_plus(Graph* G, int k, Options* options) {
+	int (*prev_fun)(Graph * G, Options * options) = options->get_first;
+	options->hochbaum_start_center = 0;
+	options->get_first = hochbaum_start_plus;
+	Result* res_opt = hochbaum(G, k, options);
+	Result* res = NULL;
+	for (int i = 1; i < G->m; i++) {
+		res = hochbaum(G, k, options);
+		if (res->score < res_opt->score) {
+			result_free(res_opt);
+			res_opt = res;
 		}
-
-		// Find closest center to vmax || TODO - premisli, ce bi mel se bitset R in bi tukaj moral preveriti samo centre, ki se niso odstranjeni? Sicer poisces najdlje oddaljen node, torej verjetno njemu najblizji ni noben od teh? Not sure. Mogoce pa se lahko zgodi, ampak ni pomembno?
-		dmin = INT_MAX;
-		for (int i = 0; i < G->m; i++) {
-			center = G->C[i];
-			dist = G->D[vmax][center];
-			if (dist < dmin) {
-				dmin = dist;
-				closest = center;
-			}
+		else {
+			result_free(res);
+			res = NULL;
 		}
-
-		// Carr[ki] = closest;
 	}
-
-	Result res;
-	res.score = dmax;
-	
-	// Bitset of removed nodes
-	BitSet* R = bitset_new(G->N);
-	bitset_add_from(R, G->C, G->m);
-	bitset_remove_from(R, Carr, k1);
-	save_removed_nodes(&res, R);
-
-	return res;
+	if (res != NULL)
+		result_free(res);
+	options->get_first = prev_fun;
+	return res_opt;
 }

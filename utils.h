@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <time.h>
+
 typedef struct PairIntDouble {
 	int node;
 	double value;
@@ -21,9 +23,13 @@ void swap_double(double* A, int i, int j);
 
 int rand_lim(int n);
 
+double get_time(clock_t start, clock_t end);
+
 LinkedList* linkedlist_new();
 
 void linkedlist_free(LinkedList* linkedlist);
+
+void linkedlist_free_all(LinkedList* linkedlist);
 
 LinkedList* linkedlist_next(LinkedList* linkedlist_prev, int delta);
 

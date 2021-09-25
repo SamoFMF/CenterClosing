@@ -20,7 +20,7 @@ void graph_raw_free(GraphRaw* graph);
 
 // Graph
 typedef struct Graph {
-	int** G; // Sorted adjacency list (TODO: not yet functional)
+	int** G; // Sorted adjacency list
 	double** D; // Distance matrix
 	int* C; // Consumers
 	int* S; // Suppliers
@@ -62,5 +62,10 @@ int* read_centers(char* filename, int* num_nodes);
 void write_pajek(char* filename, GraphRaw* graph);
 
 void write_pajek_dist(char* filename, double** D, int n);
+
+// OR-Library
+Graph* read_or_library(char* filename);
+
+Graph* read_or_library_pmed(char* filename, int* k);
 
 #endif

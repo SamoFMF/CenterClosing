@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include "graph.h"
 #include "algutils.h"
 
@@ -44,15 +45,6 @@ void graph_raw_free(GraphRaw* graph) {
 }
 
 // Graph struct used by algorithms
-//Graph* graph_new(double** D, int n) {
-//	Graph* graph;
-//	if ((graph = malloc(sizeof * graph)) != NULL) {
-//		graph->D = D;
-//		graph->N = n;
-//	}
-//	return graph;
-//}
-
 Graph* graph_new() {
 	Graph* graph;
 	if ((graph = malloc(sizeof * graph)) != NULL) {
@@ -210,7 +202,6 @@ int compare_adj_list(void* cont, const void* xin, const void* yin) {
 void graph_add_sorted_adjacency_list(Graph* G, Options* options) {
 	int c, s;
 	if (G->G != NULL) {
-		// TODO - free G->G
 		for (int i = 0; i < G->N; i++)
 			if (G->G[i] != NULL)
 				free(G->G[i]);
@@ -295,7 +286,7 @@ Graph* read_pajek(char* filename) {
 	fscanf_s(file, "%*s %d\n", &n);
 	G->N = n;
 	if ((G->D = malloc(n * sizeof * (G->D))) == NULL) {
-		printf("ERROR - Ran out of memory: read_pajek - G->D");
+		printf("ERROR - Ran out of memory: read_pajek - G->D\n");
 		graph_free(G);
 		return NULL;
 	}
@@ -303,11 +294,11 @@ Graph* read_pajek(char* filename) {
 		fscanf_s(file, "%*[^\n]\n");
 		if ((G->D[i] = malloc(n * sizeof * (G->D[i]))) != NULL) {
 			for (int j = 0; j < n; j++)
-				G->D[i][j] = INT_MAX;
+				G->D[i][j] = DBL_MAX;
 			G->D[i][i] = 0.0;
 		}
 		else {
-			printf("ERROR - Ran out of memory: read_pajek - G->D[i]");
+			printf("ERROR - Ran out of memory: read_pajek - G->D[i]\n");
 			graph_free(G);
 			return NULL;
 		}
@@ -508,4 +499,117 @@ void write_pajek_dist(char* filename, double** D, int n) {
 
 	// Close file
 	fclose(file);
+}
+
+// Read OR-Library
+Graph* read_or_library(char* filename) {
+	Graph* G = graph_new();
+	int n, m, w;
+	double d;
+	FILE* file;
+	fopen_s(&file, filename, "r");
+	fscanf_s(file, "%d %d\n", &m, &n);
+	G->N = n + m;
+	G->n = n;
+	G->m = m;
+	if ((G->D = malloc(G->N * sizeof * G->D)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library - G->D\n");
+	if ((G->S = malloc(m * sizeof * G->S)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library - G->S\n");
+	for (int i = 0; i < m; i++) {
+		fscanf_s(file, "%*[^\n]\n");
+		if ((G->D[i] = malloc(G->N * sizeof * G->D[i])) == NULL)
+			printf("ERROR - Ran out of memory: read_or_library - G->D[i](s)\n");
+		for (int j = 0; j < G->N; j++)
+			G->D[i][j] = DBL_MAX;
+		G->D[i][i] = 0.0;
+		G->S[i] = i;
+	}
+	if ((G->C = malloc(n * sizeof * G->C)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library - G->C\n");
+	if ((G->H = malloc(n * sizeof * G->H)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library - G->H\n");
+	for (int i = 0; i < n; i++) {
+		if ((G->D[i + m] = malloc(G->N * sizeof * G->D[i])) == NULL)
+			printf("ERROR - Ran out of memory: read_or_library - G->D[i](c)\n");
+		fscanf_s(file, "%d\n", &w);
+		G->H[i] = (double)w;
+		G->C[i] = i + m;
+		for (int j = 0; j < m; j++) {
+			fscanf_s(file, "%lf ", &d);
+			G->D[i + m][j] = d;
+			G->D[j][i + m] = d;
+		}
+		for (int j = 0; j < n; j++)
+			G->D[i + m][j + m] = DBL_MAX;
+		G->D[i + m][i + m] = 0.0;
+	}
+	floyd_warshall_algorithm(G->D, G->N);
+
+	return G;
+}
+
+Graph* read_or_library_pmed(char* filename, int* k) {
+	Graph* G = graph_new();
+	int n, m, kc; // Number of nodes (ie. number of consumers and also the number of suppliers), number of edges in file and k-center parameter
+	FILE* file;
+	fopen_s(&file, filename, "r");
+	fscanf_s(file, "%d %d %d\n", &n, &m, &kc);
+	G->N = 2 * n;
+	G->n = n;
+	G->m = n;
+	*k = G->m - kc;
+	if ((G->S = malloc(n * sizeof * G->S)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library - G->S\n");
+	if ((G->C = malloc(n * sizeof * G->C)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library - G->C\n");
+	if ((G->H = malloc(n * sizeof * G->H)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library - G->H\n");
+	for (int i = 0; i < n; i++) {
+		G->S[i] = i;
+		G->C[i] = i + n;
+		G->H[i] = 1.0;
+	}
+
+	if ((G->D = malloc(G->N * sizeof * G->D)) == NULL)
+		printf("ERROR - Ran out of memory: read_or_library_pmed - G->D\n");
+	for (int i = 0; i < n; i++) {
+		if ((G->D[i] = malloc(G->N * sizeof * G->D[i])) == NULL)
+			printf("ERROR - Ran out of memory: read_or_library - G->D[%d]\n", i);
+		if ((G->D[i + n] = malloc(G->N * sizeof * G->D[i + n])) == NULL)
+			printf("ERROR - Ran out of memory: read_or_library - G->D[%d]\n", i + n);
+		for (int j = 0; j < G->N; j++) {
+			G->D[i][j] = DBL_MAX;
+			G->D[i + n][j] = DBL_MAX;
+		}
+		G->D[i][i] = 0;
+		G->D[i][i + n] = 0;
+		G->D[i + n][i] = 0;
+		G->D[i + n][i + n] = 0;
+	}
+	int u, v, w;
+	double d;
+	for (int i = 0; i < m; i++) {
+		fscanf_s(file, "%d %d %d\n", &u, &v, &w);
+		u--;
+		v--;
+		d = (double)w;
+		G->D[u][v] = d;
+		G->D[v][u] = d;
+
+		G->D[u][v + n] = d;
+		G->D[v + n][u] = d;
+
+		G->D[u + n][v] = d;
+		G->D[v][u + n] = d;
+
+		G->D[u + n][v + n] = d;
+		G->D[v + n][u + n] = d;
+	}
+
+	floyd_warshall_algorithm(G->D, G->N);
+
+	fclose(file);
+
+	return G;
 }

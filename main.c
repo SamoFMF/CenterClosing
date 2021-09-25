@@ -16,6 +16,12 @@
 #include "plesnik.h"
 #include "backtracking.h"
 #include "heuristic.h"
+#include "result_to_json.h"
+#include "tester.h"
+
+//double get_time(clock_t start, clock_t end) {
+//    return ((double)(end - start)) / CLOCKS_PER_SEC;
+//}
 
 int create_D(double** D) {
     double x = 100;
@@ -54,8 +60,8 @@ void print_graph(Graph* G) {
     printf("GRAPH G:\n");
     printf("N = %d || n = %d || m = %d\n", G->N, G->n, G->m);
     if (G->D != NULL) {
-        printf("Distance matrix:\n");
-        print_matrix_double(G->D, G->N);
+        //printf("Distance matrix:\n");
+        //print_matrix_double(G->D, G->N);
     }
     if (G->S != NULL) {
         printf("S: ");
@@ -71,10 +77,11 @@ void print_graph(Graph* G) {
     }
 }
 
-void print_result(char* name, Result* R, int k) {
+void print_result(char* name, Result* R, int k, double ms) {
     printf("\nRESULT %s:\nR: ", name);
     print_array_int(R->R, k);
-    printf("Val: %lf\n", R->score);
+    printf("Val: %f\n", R->score);
+    printf("Solved in %4.0fms\n", 1000*ms);
 }
 
 //int compare(void* cont, const void* x, const void* y) {
@@ -120,6 +127,130 @@ void print_binary(unsigned long x) {
 }
 
 int main() {
+    Graph* G;
+    Options* options;
+    double* scores;
+    FILE* file;
+    char* filenameIn = malloc(100 * sizeof * filenameIn);
+    char* filenameOut = malloc(100 * sizeof * filenameOut);
+    int k;
+
+    options = options_new();
+    options->eval = test_eval;
+    options->get_first = hochbaum_start_best;
+    options->get_priority = priority_eval_center;
+
+    printf("start ..");
+    for (int i = 1; i < 41; i++) {
+        sprintf_s(filenameIn, 100, "or_library/pmed/data/pmed%d.txt", i);
+        printf("%s\n", filenameIn);
+        G = read_or_library_pmed(filenameIn, &k);
+
+        printf("k=%d\n", k);
+
+        sprintf_s(filenameOut, 100, "or_library/pmed/testing/pmed%d_results.txt", i);
+        fopen_s(&file, filenameOut, "w");
+        fprintf(file, "[");
+        scores = test_approximate(G, options, k, k + 1, 1, file);
+        fprintf(file, "]");
+        fclose(file);
+
+        graph_free(G);
+        free(scores);
+    }
+
+    printf("Done!\n");
+
+    //Graph* G = read_pajek("data/moj4.net");
+    //BitSet* S_set = bitset_new(G->N);
+    //int* S_arr = malloc(2 * sizeof(int));
+    //S_arr[0] = 2;
+    //S_arr[1] = 3;
+    //bitset_add_from(S_set, S_arr, 2);
+    //G->H = malloc(2 * sizeof(double));
+    //G->H[0] = 4;
+    //G->H[1] = 1;
+
+    //graph_partition_nodes(G, S_set, 2);
+
+    ////int k;
+    ////Graph* G = read_or_library_pmed("or_library/pmed/data/pmed1.txt", &k);
+
+    //print_graph(G);
+
+    //int k = 1;
+    //Options* options = options_new();
+    //options->eval = test_eval1;
+    //options->get_first = hochbaum_start_random;
+    //options->get_priority = priority_eval_center;
+
+    //graph_add_sorted_adjacency_list(G, options);
+
+    //Result* res = plesnik(G, k, options, range_adj);
+    //print_result("asd", res, k, 0.0);
+
+    //printf(" after\n");
+
+    /*sprintf_s(filenameIn, 50, "or_library/cap/datc/capa.txt");
+    printf("%s\n", filenameIn);
+    G = read_or_library(filenameIn);
+
+    options = options_new();
+    options->eval = test_eval1;
+    options->get_first = hochbaum_start_best;
+    options->get_priority = priority_eval_center;
+
+    graph_add_sorted_adjacency_list(G, options);
+
+    sprintf_s(filenameOut, 60, "or_library/cap/results/capc_results_weighted.txt");
+
+    fopen_s(&file, filenameOut, "w");
+    fprintf(file, "[");
+    scores = test_approximate(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_exact(G, options, 1, G->m, 1, scores, file);
+    fprintf(file, ", ");
+    test_backtracking(G, options, 1, 3, 1, file);
+    fprintf(file, ", ");
+    test_backtracking(G, options, G->m - 2, G->m, 1, file);
+    fprintf(file, ", ");
+    test_backtracking_decision(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_bruteforce(G, options, 1, 3, 1, file);
+    fprintf(file, ", ");
+    test_bruteforce(G, options, G->m - 2, G->m, 1, file);
+    fprintf(file, "]");
+    fclose(file);
+    free(scores);*/
+
+    //options = options_new();
+    //options->eval = test_eval;
+    //options->get_first = hochbaum_start_best;
+    //options->get_priority = priority_eval_center;
+
+    //int k;
+    //G = read_or_library_pmed("or_library/pmed/data/pmed40.txt", &k);
+    ///*fopen_s(&file, "or_library/pmed/results/pmed40_results.txt", "w");
+    //fprintf(file, "[");
+    //test_approximate(G, options, k, k + 1, 1, file);
+    //fprintf(file, "]");
+    //fclose(file);*/
+
+    //clock_t start = clock();
+    //Result* res = greedy_basic(G, k, options);
+    //clock_t end = clock();
+    //print_result("basic", res, k, get_time(start, end));
+
+    return 0;
+}
+
+int main_old() {
+    //clock_t start, end;
+
+    /*FILE* file;
+    fopen_s(&file, "data/output_test.txt", "w");
+    fprintf(file, "{");*/
+
     // Primer 1: data/moj4.net (tudi v magistrski)
     Graph* G = read_pajek("data/moj4.net");
     BitSet* S_set = bitset_new(G->N);
@@ -138,39 +269,79 @@ int main() {
     int k = 1;
     Options* options = options_new();
     options->eval = test_eval1;
-    options->get_first = random_start;
+    options->get_first = hochbaum_start_random;
     options->get_priority = priority_eval_center;
 
-    Result* res = bruteforce(G, k, options);
-    print_result("bruteforce", res, k);
-
-    Result* res1 = backtracking(G, k, options);
-    print_result("backtracking", res1, k);
-
-    Result* res2 = greedy_centers(G, k, options);
-    print_result("greedy_centers", res2, k);
-
-    Result* res3 = greedy_basic(G, k, options);
-    print_result("greedy_basic", res3, k);
-
-    Result* res4 = hochbaum(G, k, options);
-    print_result("hochbaum", res4, k);
-
     graph_add_sorted_adjacency_list(G, options);
-    Result* res5 = decision_to_optimization(G, k, options, range_adj);
-    print_result("dec_to_opt", res5, k);
 
-    Result* res6 = cluster_cardinality(G, k, options);
-    print_result("cardinality", res6, k);
+    FILE* file;
+    fopen_s(&file, "data/moj4_results.txt", "w");
+    fprintf(file, "[");
+    double* scores = test_approximate(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_exact(G, options, 1, G->m, 1, scores, file);
+    fprintf(file, "]");
+    fclose(file);
+    free(scores);
 
-    Result* res7 = cluster_radius(G, k, options);
-    print_result("radius", res7, k);
+    /*start = clock();
+    Result* res = bruteforce(G, k, options);
+    end = clock();
+    print_result("bruteforce", res, k, get_time(start, end));
+    write_entry(file, "bruteforce", res, k, get_time(start, end));
+    fprintf(file, ", ");
+
+    start = clock();
+    Result* res1 = backtracking(G, k, options);
+    end = clock();
+    print_result("backtracking", res1, k, get_time(start, end));
+    write_entry(file, "backtracking", res1, k, get_time(start, end));
+    fprintf(file, ", ");
+
+    start = clock();
+    Result* res2 = exact(G, k, options);
+    end = clock();
+    print_result("exact", res2, k, get_time(start, end));
+
+    start = clock();
+    Result* res3 = greedy_centers(G, k, options);
+    end = clock();
+    print_result("greedy_centers", res3, k, get_time(start, end));
+
+    start = clock();
+    Result* res4 = greedy_basic(G, k, options);
+    end = clock();
+    print_result("greedy_basic", res4, k, get_time(start, end));
+
+    start = clock();
+    Result* res5 = hochbaum(G, k, options);
+    end = clock();
+    print_result("hochbaum", res5, k, get_time(start, end));
+
+    start = clock();
+    Result* res6 = plesnik(G, k, options, range_adj);
+    end = clock();
+    print_result("plesnik", res6, k, get_time(start, end));
+
+    start = clock();
+    Result* res7 = cluster_cardinality(G, k, options);
+    end = clock();
+    print_result("cardinality", res7, k, get_time(start, end));
+
+    start = clock();
+    Result* res8 = cluster_radius(G, k, options);
+    end = clock();
+    printf("f\n", 2.3);
+    print_result("radius", res8, k, get_time(start, end));
+
+    fclose(file);*/
+
 
     graph_free(G);
     bitset_free(S_set);
     free(S_arr);
     free(options);
-    result_free(res);
+    /*result_free(res);
     result_free(res1);
     result_free(res2);
     result_free(res3);
@@ -178,6 +349,7 @@ int main() {
     result_free(res5);
     result_free(res6);
     result_free(res7);
+    result_free(res8);*/
 
     // Primer 2: data/moj1.net
     printf("\n\n");
@@ -202,45 +374,359 @@ int main() {
     k = 2;
     options = options_new();
     options->eval = test_eval1;
-    options->get_first = random_start;
+    options->get_first = hochbaum_start_best;
     options->get_priority = priority_eval_center;
-
-    res = bruteforce(G, k, options);
-    print_result("bruteforce", res, k);
-
-    res1 = backtracking(G, k, options);
-    print_result("backtracking", res1, k);
-
-    res2 = greedy_centers(G, k, options);
-    print_result("greedy_centers", res2, k);
-
-    res3 = greedy_basic(G, k, options);
-    print_result("greedy_basic", res3, k);
-
-    res4 = hochbaum(G, k, options);
-    print_result("hochbaum", res4, k);
-
-    // printf("DONE\n\n");
 
     graph_add_sorted_adjacency_list(G, options);
 
-    /*BitSet* X = range_adj(G, k, 190, options);
-    if (X == NULL)
-        printf("X = NULL\n");
-    else {
-        Result* res5 = result_new();
-        result_update(res5, 0, X, G->S);
-        print_result("test", res5, k);
-    }*/
+    fopen_s(&file, "data/moj1_results.txt", "w");
+    fprintf(file, "[");
+    scores = test_approximate(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_exact(G, options, 1, G->m, 1, scores, file);
+    fprintf(file, ", ");
+    test_backtracking(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_bruteforce(G, options, 1, G->m, 1, file);
+    fprintf(file, "]");
+    fclose(file);
+    free(scores);
 
-    res5 = decision_to_optimization(G, k, options, range_adj);
-    print_result("dec_to_opt", res5, k);
+    graph_free(G);
+    bitset_free(S_set);
+    free(S_arr);
+    free(options);
 
-    res6 = cluster_cardinality(G, k, options);
-    print_result("cardinality", res6, k);
+    G = read_or_library("data/or_library/cap41.txt");
+    //print_graph(Gtest);
+    //printf("\n");
+    //for (int i = 0; i < 5; i++) {
+    //    for (int j = 0; j < 5; j++)
+    //        printf("%7.2lf ", Gtest->D[i][j]);
+    //    printf("\n");
+    //}
 
-    res7 = cluster_radius(G, k, options);
-    print_result("radius", res7, k);
+    options = options_new();
+    options->eval = test_eval;
+    options->get_first = hochbaum_start_best;
+    options->get_priority = priority_eval_center;
+
+    graph_add_sorted_adjacency_list(G, options);
+
+    fopen_s(&file, "data/or_library/results/cap41_results.txt", "w");
+    fprintf(file, "[");
+    scores = test_approximate(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_exact(G, options, 1, G->m, 1, scores, file);
+    fprintf(file, ", ");
+    test_backtracking(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_backtracking_decision(G, options, 1, G->m, 1, file);
+    fprintf(file, ", ");
+    test_bruteforce(G, options, 1, G->m, 1, file);
+    fprintf(file, "]");
+    fclose(file);
+    free(scores);
+
+    //start = clock();
+    //res = bruteforce(G, k, options);
+    //end = clock();
+    //print_result("bruteforce", res, k, get_time(start, end));
+
+    //start = clock();
+    //res1 = backtracking(G, k, options);
+    //end = clock();
+    //print_result("backtracking", res1, k, get_time(start, end));
+
+    //start = clock();
+    //Result* res2 = exact_bound(G, k, options, 285 + 1e-6);
+    //end = clock();
+    //print_result("exact", res2, k, get_time(start, end));
+
+    //start = clock();
+    //res3 = greedy_centers(G, k, options);
+    //end = clock();
+    //print_result("greedy_centers", res3, k, get_time(start, end));
+
+    //start = clock();
+    //res4 = greedy_basic(G, k, options);
+    //end = clock();
+    //print_result("greedy_basic", res4, k, get_time(start, end));
+
+    //start = clock();
+    //res5 = hochbaum(G, k, options);
+    //end = clock();
+    //print_result("hochbaum", res5, k, get_time(start, end));
+
+    //start = clock();
+    //res6 = plesnik(G, k, options, range_adj);
+    //end = clock();
+    //print_result("plesnik", res6, k, get_time(start, end));
+
+    //start = clock();
+    //res7 = cluster_cardinality(G, k, options);
+    //end = clock();
+    //print_result("cardinality", res7, k, get_time(start, end));
+
+    //start = clock();
+    //res8 = cluster_radius(G, k, options);
+    //end = clock();
+    //print_result("radius", res8, k, get_time(start, end));
+
+    //start = clock();
+    //Result* res10 = plesnik_unlimited(G, k, options, range_first, 10);
+    //end = clock();
+    //print_result("plesnik++", res10, k, get_time(start, end));
+
+    //graph_free(G);
+    //bitset_free(S_set);
+    //free(S_arr);
+    //free(options);
+    //result_free(res);
+    //result_free(res1);
+    //result_free(res2);
+    //result_free(res3);
+    //result_free(res4);
+    //result_free(res5);
+    //result_free(res6);
+    //result_free(res7);
+    //result_free(res8);
+
+    ////////////////////////////
+    //// Primer 3: data/moj2.net
+    //printf("\n\n");
+    //G = read_pajek("data/moj2.net");
+    //S_set = bitset_new(G->N);
+    //int m = 10;
+    //int n = G->N - m;
+    //S_arr = malloc(m * sizeof(int));
+    //for (int i = 0; i < m; i++)
+    //    S_arr[i] = i;
+    //bitset_add_from(S_set, S_arr, m);
+    //G->H = malloc(n * sizeof(double));
+    //for (int i = 0; i < n; i++)
+    //    G->H[i] = i + 1;
+
+
+    //graph_partition_nodes(G, S_set, m);
+
+    ////print_graph(G);
+    //printf("START SOLVING\n");
+
+    //k = 5;
+    //options = options_new();
+    //options->eval = test_eval1;
+    //options->get_first = random_start;
+    //options->get_priority = priority_eval_center;
+
+    //graph_add_sorted_adjacency_list(G, options);
+
+    ////start = clock();
+    ////res = bruteforce(G, k, options);
+    ////end = clock();
+    ////print_result("bruteforce", res, k, get_time(start, end));
+
+    ////start = clock();
+    ////res1 = backtracking(G, k, options);
+    ////end = clock();
+    ////print_result("backtracking", res1, k, get_time(start, end));
+
+    //start = clock();
+    //res2 = exact(G, k, options);
+    //end = clock();
+    //print_result("exact", res2, k, get_time(start, end));
+
+    //start = clock();
+    //res3 = greedy_centers(G, k, options);
+    //end = clock();
+    //print_result("greedy_centers", res3, k, get_time(start, end));
+
+    //start = clock();
+    //res4 = greedy_basic(G, k, options);
+    //end = clock();
+    //print_result("greedy_basic", res4, k, get_time(start, end));
+
+    //start = clock();
+    //res5 = hochbaum(G, k, options);
+    //end = clock();
+    //print_result("hochbaum", res5, k, get_time(start, end));
+
+    //start = clock();
+    //res6 = plesnik(G, k, options, range_adj);
+    //end = clock();
+    //print_result("plesnik", res6, k, get_time(start, end));
+
+    //start = clock();
+    //res7 = cluster_cardinality(G, k, options);
+    //end = clock();
+    //print_result("cardinality", res7, k, get_time(start, end));
+
+    //start = clock();
+    //res8 = cluster_radius(G, k, options);
+    //end = clock();
+    //print_result("radius", res8, k, get_time(start, end));
+
+    //start = clock();
+    //Result* res9 = backtracking_decision_to_optimization(G, k, options);
+    //end = clock();
+    //print_result("back_dec_opt", res9, k, get_time(start, end));
+
+    //n = 5;
+    //int* xs = malloc(n * sizeof * xs);
+    //for (int i = 0; i < n; i++)
+    //    xs[i] = i + 1;
+
+    //printf("START\n");
+    //FILE* f;
+    //fopen_s(&f, "testdata", "wb");
+    //fwrite(xs, sizeof(int), n, f);
+    //fwrite(xs, sizeof(int), n, f);
+    //fclose(f);
+
+    //printf("READ\n");
+
+    //int* ys = malloc(2 * n * sizeof * ys);
+    //fopen_s(&f, "testdata", "rb");
+    //fread(ys, sizeof(int), 2*n, f);
+    //fclose(f);
+
+    //printf("DONE\n");
+    //for (int i = 0; i < 2*n; i++)
+    //    printf("%d ", ys[i]);
+    //printf("\n");
+
+    //double** D = malloc(n * sizeof * D);
+    //for (int i = 0; i < n; i++) {
+    //    D[i] = malloc(n * sizeof * D[i]);
+    //    for (int j = 0; j < n; j++)
+    //        D[i][j] = i * j;
+    //}
+
+    //fopen_s(&f, "testdata1", "wb");
+    //for (int i = 0; i < n; i++)
+    //    fwrite(D[i], sizeof(double), n, f);
+    //fclose(f);
+
+    //double** D1 = malloc(n * sizeof * D1);
+    //for (int i = 0; i < n; i++)
+    //    D1[i] = malloc(n * sizeof * D1[i]);
+    //fopen_s(&f, "testdata1", "rb");
+    //for (int i = 0; i < n; i++)
+    //    fread(D1[i], sizeof(double), n, f);
+
+    //for (int i = 0; i < n; i++) {
+    //    for (int j = 0; j < n; j++) {
+    //        printf("%2.0f ", D1[i][j]);
+    //    }
+    //    printf("\n");
+    //}
+    //fclose(f);
+
+    //fopen_s(&f, "testdata3", "wb");
+    //for (int i = 0; i < G->N; i++)
+    //    fwrite(G->D[i], sizeof(double), G->N, f);
+    //fclose(f);
+
+    //FILE* f;
+    //printf("\n\nMALLOC\n");
+    //int n = 6470;
+    //double** dists = malloc(n * sizeof * dists);
+    //for (int i = 0; i < n; i++)
+    //    dists[i] = malloc(n * sizeof * dists[i]);
+    //printf("READ\n");
+    //fopen_s(&f, "data/gmaps_distances10_6470", "rb");
+    //for (int i = 0; i < n; i++)
+    //    fread(dists[i], sizeof(double), n, f);
+    //fclose(f);
+    //printf("FLOYD-WARSHALL .. ");
+    //start = clock();
+    //floyd_warshall_algorithm(dists, n);
+    //end = clock();
+    //printf("%f\nWRITING\n", get_time(start, end));
+    //fopen_s(&f, "data/gmaps_distances10_full_6470", "wb");
+    //for (int i = 0; i < n; i++)
+    //    fwrite(dists[i], sizeof(double), n, f);
+    //fclose(f);
+    //printf("\nDONE\n");
+
+
+
+    //FILE* f;
+    //start = clock();
+    //int num = 6470;
+    //double** D2 = malloc(num * sizeof * D2);
+    //for (int i = 0; i < num; i++)
+    //    D2[i] = malloc(num * sizeof * D2[i]);
+    //fopen_s(&f, "data/distances_6470", "rb");
+    //for (int i = 0; i < num; i++)
+    //    fread(D2[i], sizeof(double), num, f);
+    //fclose(f);
+    //end = clock();
+    //printf("Read in %f time.\n", get_time(start, end));
+
+    //for (int i = 0; i < 5; i++) {
+    //    for (int j = 0; j < 5; j++)
+    //        printf("%7.3f ", D2[i][j]);
+    //    printf("\n");
+    //}
+    //printf("\n");
+
+    //int m1 = 463;
+    //int n1 = 6007;
+    //int N1 = n1 + m1;
+    //Graph* G1 = malloc(sizeof * G1);
+    //G1->D = D2;
+    //G1->N = N1;
+    //int* Sarr1 = malloc(m1 * sizeof * Sarr1);
+    //for (int i = 0; i < m1; i++) {
+    //    Sarr1[i] = n1 + i;
+    //}
+    //BitSet* Sset1 = bitset_new(N1);
+    //bitset_add_from(Sset1, Sarr1, m1);
+
+    //graph_partition_nodes(G1, Sset1, m1);
+
+    //G1->H = malloc(n1 * sizeof * G1->H);
+    //fopen_s(&f, "data/population_6007", "rb");
+    //fread(G1->H, sizeof(double), n1, f);
+    //fclose(f);
+
+    ////free(options);
+    //options = options_new();
+    //options->eval = test_eval1;
+    //options->get_first = hochbaum_start_random;
+    //options->get_priority = priority_eval_center;
+    //k = 1;
+
+    //scores = test_approximate(G1, options, 100, 101, 1, "data/slovenija_approx.txt"); // 12194.492462
+
+    /*start = clock();
+    Result* res3 = greedy_centers(G1, k, options, range_first);
+    end = clock();
+    print_result("greedy_centers", res3, k, get_time(start, end));*/
+
+    /*scores = test_approximate(G1, options, 80, 101, 5, "data/slovenija_approx.txt");
+    free(scores);*/
+
+    //k = 30;
+    //start = clock();
+    ////Result* res3 = exact_bound(G1, k, options, 51000);
+    //Result* res3 = exact(G1, k, options);
+    //end = clock();
+    //print_result("exact", res3, k, get_time(start, end));
+
+    //double d;
+    //int sm;
+    //for (int c = 0; c < G1->n; c++) {
+    //    d = INT_MAX;
+    //    for (int s = 0; s < G1->m; s++)
+    //        if (options->eval(c, s, G1) < d) {
+    //            d = options->eval(c, s, G1);
+    //            sm = s;
+    //        }
+    //    if (abs(d - 50088.021004) < 0.1)
+    //        printf("c=%d, s=%d\n", c, sm);
+    //}
 
     return 0;
 }

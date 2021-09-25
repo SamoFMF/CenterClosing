@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "utils.h"
 
 void swap_int(int* A, int i, int j) {
@@ -23,6 +24,10 @@ int rand_lim(int n) {
 	return random_int % n;
 }
 
+double get_time(clock_t start, clock_t end) {
+	return ((double)(end - start)) / CLOCKS_PER_SEC;
+}
+
 PairIntDouble* pair_new(int node, double value) {
 	PairIntDouble* pair;
 	if ((pair = malloc(sizeof * pair)) == NULL) {
@@ -40,9 +45,11 @@ LinkedList* linkedlist_new() {
 	if ((linkedlist = malloc(sizeof * linkedlist)) != NULL) {
 		linkedlist->val = 0.0;
 		linkedlist->delta = 0;
-		if ((linkedlist->prev = malloc(sizeof * linkedlist->prev)) == NULL || (linkedlist->next = malloc(sizeof * linkedlist->prev)) == NULL) {
+		/*if ((linkedlist->prev = malloc(sizeof * linkedlist->prev)) == NULL || (linkedlist->next = malloc(sizeof * linkedlist->prev)) == NULL) {
 			printf("ERROR: Ran out of memory - linkedlist_new - prev/next malloc");
-		}
+		}*/
+		linkedlist->prev = NULL;
+		linkedlist->next = NULL;
 	}
 	else {
 		printf("ERROR: Ran out of memory - linkedlist_new");
@@ -54,18 +61,20 @@ void linkedlist_free(LinkedList* linkedlist) {
 	free(linkedlist); // TODO - premisli: prev in next hocemo se obdrzati v spominu?
 }
 
+void linkedlist_free_all(LinkedList* linkedlist) { // Frees linkedlist and all previous linked lists
+	if (linkedlist->prev != NULL)
+		linkedlist_free_all(linkedlist->prev);
+	linkedlist_free(linkedlist);
+}
+
 LinkedList* linkedlist_next(LinkedList* linkedlist_prev, int delta) {
-	LinkedList* linkedlist;
-	if ((linkedlist = malloc(sizeof * linkedlist)) != NULL) {
+	LinkedList* linkedlist = linkedlist_new();
+	if (linkedlist != NULL) {
 		linkedlist->val = linkedlist_prev->val;
 		linkedlist->delta = delta;
 		linkedlist->prev = linkedlist_prev;
-		linkedlist->next = NULL;
 
 		linkedlist_prev->next = linkedlist;
-	}
-	else {
-		printf("ERROR: Ran out of memory - linkedlist_next");
 	}
 	return linkedlist;
 }
@@ -73,7 +82,7 @@ LinkedList* linkedlist_next(LinkedList* linkedlist_prev, int delta) {
 LinkedList* linkedlist_remove_last(LinkedList* linkedlist) {
 	LinkedList* linkedlist_prev = linkedlist->prev; // TODO - what if this is NULL??
 	linkedlist_prev->next = NULL;
-	free(linkedlist);
+	linkedlist_free(linkedlist);
 	return linkedlist_prev;
 }
 

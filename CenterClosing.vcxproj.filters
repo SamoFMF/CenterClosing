@@ -31,6 +31,12 @@
     <Filter Include="Header Files\GraphGenerators">
       <UniqueIdentifier>{2ed5df4a-27a5-4b8c-87e5-882ca3ea1435}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Testers">
+      <UniqueIdentifier>{8e624480-f0b7-4b16-9024-1fc72b598594}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Testers">
+      <UniqueIdentifier>{6f12987e-a0ec-462f-96a5-c6b70f9d002a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c">
@@ -81,6 +87,12 @@
     <ClCompile Include="herustic.c">
       <Filter>Source Files\algorithms</Filter>
     </ClCompile>
+    <ClCompile Include="tester.c">
+      <Filter>Source Files\Testers</Filter>
+    </ClCompile>
+    <ClCompile Include="result_to_json.c">
+      <Filter>Source Files\Testers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bruteforce.h">
@@ -127,6 +139,12 @@
     </ClInclude>
     <ClInclude Include="heuristic.h">
       <Filter>Header Files\algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="tester.h">
+      <Filter>Header Files\Testers</Filter>
+    </ClInclude>
+    <ClInclude Include="result_to_json.h">
+      <Filter>Header Files\Testers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,18 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "graph.h"
+#include <float.h>
 #include "algutils.h"
+#include "bitset.h"
+#include "graph.h"
+#include "plesnik.h"
 #include "utils.h"
-
-int compare(void* cont, const void* x, const void* y) {
-	double* cont1 = cont;
-	if (cont1 == NULL) printf("NULL!");
-	double f = cont1[*((int*)x)];
-	double s = cont1[*((int*)y)];
-	if (f > s) return 1;
-	if (f < s) return -1;
-	return 0;
-}
 
 int compare_weights(void* cont, const void* x, const void* y) {
 	double* H = cont;
@@ -24,15 +17,15 @@ int compare_weights(void* cont, const void* x, const void* y) {
 }
 
 // Requires G->G
-BitSet* range_adj(Graph* G, int k, double B, Options* options) {
+BitSet* range_adj(Graph* G, int k, double B, Options* options, int* ics) {
 	BitSet* R = bitset_new_full(G->m);
 
-	int* ics;
-	if ((ics = malloc(G->n * sizeof * ics)) == NULL)
-		printf("ERROR - Ran out of memory: range_cur - ics\n");
-	for (int i = 0; i < G->n; i++)
-		ics[i] = i;
-	qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
+	//int* ics;
+	//if ((ics = malloc(G->n * sizeof * ics)) == NULL)
+	//	printf("ERROR - Ran out of memory: range_cur - ics\n");
+	//for (int i = 0; i < G->n; i++)
+	//	ics[i] = i;
+	//qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
 	BitSet* covered = bitset_new(G->n);
 
 	int c, s, c1, s1, c2;
@@ -43,7 +36,7 @@ BitSet* range_adj(Graph* G, int k, double B, Options* options) {
 			if (options->eval(c, s, G) > B) {
 				bitset_free(R);
 				bitset_free(covered);
-				free(ics);
+				//free(ics);
 				return NULL;
 			}
 			else {
@@ -75,25 +68,27 @@ BitSet* range_adj(Graph* G, int k, double B, Options* options) {
 	}
 
 	bitset_free(covered);
-	free(ics);
+	//free(ics);
 
 	if (R->numOfElements >= k) {
 		return R;
 	}
 	else {
+		if (R != NULL)
+			bitset_free(R);
 		return NULL;
 	}
 }
 
-BitSet* range_rand(Graph* G, int k, double B, Options* options) {
+BitSet* range_rand(Graph* G, int k, double B, Options* options, int* ics) {
 	BitSet* R = bitset_new_full(G->m);
 
-	int* ics;
-	if ((ics = malloc(G->n * sizeof * ics)) == NULL)
-		printf("ERROR - Ran out of memory: range_cur - ics\n");
-	for (int i = 0; i < G->n; i++)
-		ics[i] = i;
-	qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
+	//int* ics;
+	//if ((ics = malloc(G->n * sizeof * ics)) == NULL)
+	//	printf("ERROR - Ran out of memory: range_cur - ics\n");
+	//for (int i = 0; i < G->n; i++)
+	//	ics[i] = i;
+	//qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
 	BitSet* covered = bitset_new(G->n);
 
 	int c, s, nums;
@@ -110,12 +105,12 @@ BitSet* range_rand(Graph* G, int k, double B, Options* options) {
 			if (nums == 0) {
 				bitset_free(R);
 				bitset_free(covered);
-				free(ics);
+				//free(ics);
 				return NULL;
 			}
 			else {
 				bitset_remove(R, s);
-				for (int ic = 0; ic < G->m; ic++)
+				for (int ic = 0; ic < G->n; ic++)
 					if (options->eval(ic, s, G) <= 3 * B)
 						bitset_add(covered, ic);
 			}
@@ -123,25 +118,71 @@ BitSet* range_rand(Graph* G, int k, double B, Options* options) {
 	}
 
 	bitset_free(covered);
-	free(ics);
+	//free(ics);
 
 	if (R->numOfElements >= k) {
 		return R;
 	}
 	else {
+		if (R != NULL)
+			bitset_free(R);
 		return NULL;
 	}
 }
 
-BitSet* range_first(Graph* G, int k, double B, Options* options) {
+BitSet* range_closest(Graph* G, int k, double B, Options* options, int* ics) {
+	BitSet* R = bitset_new_full(G->m);
+	BitSet* covered = bitset_new(G->n);
+
+	int c, s;
+	double closest, dist;
+	for (int i = 0; i < G->n; i++) {
+		c = ics[i];
+		if (!bitset_contains(covered, c)) {
+			s = -1;
+			closest = B;
+			for (int is = 0; is < G->m; is++) {
+				if (bitset_contains(R, is)) {
+					dist = options->eval(c, is, G);
+					if (dist <= closest)
+						s = is;
+				}
+			}
+			if (s < 0) {
+				bitset_free(R);
+				bitset_free(covered);
+				return NULL;
+			}
+			else {
+				bitset_remove(R, s);
+				for (int ic = 0; ic < G->n; ic++)
+					if (options->eval(ic, s, G) <= 3 * B)
+						bitset_add(covered, ic);
+			}
+		}
+	}
+
+	bitset_free(covered);
+
+	if (R->numOfElements >= k) {
+		return R;
+	}
+	else {
+		if (R != NULL)
+			bitset_free(R);
+		return NULL;
+	}
+}
+
+BitSet* range_first(Graph* G, int k, double B, Options* options, int* ics) {
 	BitSet* R = bitset_new_full(G->m);
 
-	int* ics;
-	if ((ics = malloc(G->n * sizeof * ics)) == NULL)
-		printf("ERROR - Ran out of memory: range_cur - ics\n");
-	for (int i = 0; i < G->n; i++)
-		ics[i] = i;
-	qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
+	//int* ics;
+	//if ((ics = malloc(G->n * sizeof * ics)) == NULL)
+	//	printf("ERROR - Ran out of memory: range_cur - ics\n");
+	//for (int i = 0; i < G->n; i++)
+	//	ics[i] = i;
+	//qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
 	BitSet* covered = bitset_new(G->n);
 
 	int c, s;
@@ -158,12 +199,12 @@ BitSet* range_first(Graph* G, int k, double B, Options* options) {
 			if (s < 0) {
 				bitset_free(R);
 				bitset_free(covered);
-				free(ics);
+				//free(ics);
 				return NULL;
 			}
 			else {
 				bitset_remove(R, s);
-				for (int ic = 0; ic < G->m; ic++)
+				for (int ic = 0; ic < G->n; ic++)
 					if (options->eval(ic, s, G) <= 3 * B)
 						bitset_add(covered, ic);
 			}
@@ -171,212 +212,120 @@ BitSet* range_first(Graph* G, int k, double B, Options* options) {
 	}
 
 	bitset_free(covered);
-	free(ics);
+	//free(ics);
 
 	if (R->numOfElements >= k) {
 		return R;
 	}
 	else {
+		if (R != NULL)
+			bitset_free(R);
 		return NULL;
 	}
 }
 
-Result* decision_to_optimization(Graph* G, int k, Options* options, BitSet* (*decision_solver)(Graph* G, int k, double B, Options* options)) {
+Result* plesnik(Graph* G, int k, Options* options, BitSet* (*decision_solver)(Graph* G, int k, double B, Options* options, int* ics)) {
+	int* ics;
+	if ((ics = malloc(G->n * sizeof * ics)) == NULL)
+		printf("ERROR - Ran out of memory: range_cur - ics\n");
+	for (int i = 0; i < G->n; i++)
+		ics[i] = i;
+	qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
+
 	int ilow, ihigh, imid;
 	double* dists = get_sorted_distances_no_duplicates(G, &ihigh, options);
-	
-	BitSet* R;
-	if ((R = decision_solver(G, k, dists[0], options)) == NULL) {
+
+	free(dists);
+
+	dists = get_sorted_distances_no_duplicates(G, &ihigh, options);
+
+	BitSet* R = NULL;
+	BitSet* Ropt;
+	if ((Ropt = decision_solver(G, k, dists[0], options, ics)) == NULL) {
 		ilow = 0;
 		ihigh--;
-		if ((R = decision_solver(G, k, dists[ihigh], options)) == NULL) {
+		if ((Ropt = decision_solver(G, k, dists[ihigh], options, ics)) == NULL) {
 			printf("ERROR - decision_to_optimization failed: no solution found\n"); // This should never happen
 			return NULL;
 		}
+
 		while (ihigh - ilow > 1) {
 			if (R != NULL)
 				bitset_free(R);
 			imid = (ihigh + ilow) / 2;
-			if ((R = decision_solver(G, k, dists[imid], options)) == NULL) {
+			if ((R = decision_solver(G, k, dists[imid], options, ics)) == NULL) {
 				ilow = imid;
 			}
 			else {
 				ihigh = imid;
+				bitset_soft_copy(Ropt, R);
 			}
 		}
 	}
 	Result* res = result_new();
-	result_update(res, eval_score(G, R, options), R, G->S);
+	result_update(res, eval_score(G, Ropt, options), Ropt, G->S);
+
+	if (R != NULL)
+		bitset_free(R);
+	bitset_free(Ropt);
+	free(dists);
+	free(ics);
+
 	return res;
 }
 
-//Result range_new(Graph* G, int k, double B) {
-//	int k1 = G->m - k;
-//	Result res;
-//
-//	BitSet* covered = bitset_new(G->n);
-//	int* R = bitset_new_full(G->N);
-//
-//	// Sort nodes by h-score
-//	int* idxs;
-//	if ((idxs = malloc(G->n * sizeof * idxs)) == NULL) {
-//		printf("ERROR - Ran out of memory: range - idxs");
-//	}
-//	else {
-//		for (int i = 0; i < G->n; i++) idxs[i] = i;
-//	}
-//	qsort_s(idxs, G->n, sizeof(int), compare, G->H);
-//
-//	int node, center, cstar, cstar_idx, i, j;
-//	double dist;
-//	for (int idx = 0; idx < G->n; idx++) {
-//		i = idxs[idx];
-//		if (bitset_contains(covered, i)) continue;
-//		node = G->C[i];
-//
-//		// Check ifi there exists a center with range at most B
-//		cstar = -1;
-//		cstar_idx = -1;
-//		for (int j = 0; j < G->m; j++) {
-//			center = G->C[j];
-//			dist = f(G, i, j);
-//			if (dist <= B) {
-//				cstar = center;
-//				cstar_idx = j;
-//				break;
-//			}
-//		}
-//
-//		// Check if center at range at most B was found
-//		if (cstar < 0) {
-//			// TODO - free things
-//			res.score = 0;
-//			res.R = NULL;
-//			return res;
-//		}
-//		else {
-//			// Found center `cstar` => cover all nodes within 3*B distance
-//			bitset_add(covered, i);
-//			bitset_remove(R, cstar);
-//			for (int jdx = idx + 1; jdx < G->n; jdx++) {
-//				j = idxs[jdx];
-//				node = G->C[j];
-//				dist = f(G, i, cstar_idx);
-//				if (dist <= 3 * B) bitset_add(covered, j);
-//			}
-//		}
-//	}
-//
-//	// TODO
-//}
-//
-//Result range(Graph* G, int k, double B) {
-//	int k1 = G->m - k;
-//	Result res;
-//
-//	// Covered nodes
-//	BitSet* covered = bitset_new(G->n);
-//
-//	// Chosen centers
-//	int* C;
-//	if ((C = malloc(k1 * sizeof * C)) == NULL) {
-//		printf("ERROR - Ran out of memory: range - C");
-//	}
-//	int C_len = 0;
-//
-//	int node, center, cstar;
-//	double dist;
-//	for (int i = 0; i < G->n; i++) {
-//		if (bitset_contains(covered, i)) continue;
-//		node = G->C[i];
-//
-//		// Check if there exists a center with range at most B
-//		cstar = -1;
-//		for (int j = 0; j < G->m; j++) {
-//			center = G->C[j];
-//			dist = G->D[node][center];
-//			if (dist <= B) {
-//				cstar = center;
-//				break;
-//			}
-//		}
-//
-//		// Check if we found center with distance at most B
-//		if (cstar < 0 || C_len == k1) {
-//			// No such center exists ... return False
-//			// OR We found a new center to be added, but we've already added the maximum number of centers ... return False
-//			res.score = 0;
-//			res.R = NULL;
-//			return res;
-//		}
-//		else {
-//			// Found center `cstar` ... cover all nodes within 3*B distance
-//			bitset_add(covered, i);
-//			for (int j = i + 1; j < G->n; j++) {
-//				node = G->C[j];
-//				dist = G->D[node][cstar];
-//				if (dist <= 3 * B) bitset_add(covered, j);
-//			}
-//
-//			// Add `cstar` to centers `C`
-//			C[C_len++] = cstar;
-//		}
-//	}
-//
-//	// Delete `covered` from memory
-//	free(covered);
-//
-//	// Solution found
-//	res.score = 1;
-//
-//	// Add removed nodes
-//	BitSet* R = bitset_new(G->N);
-//	bitset_add_from(R, G->C, G->m);
-//	bitset_remove_from(R, C, C_len);
-//	save_removed_nodes(&res, R);
-//
-//	return res;
-//}
+Result* plesnik_unlimited(Graph* G, int k, Options* options, BitSet* (*decision_solver)(Graph* G, int k, double B, Options* options, int* ics), double tol) {
+	int* ics;
+	if ((ics = malloc(G->n * sizeof * ics)) == NULL)
+		printf("ERROR - Ran out of memory: range_cur - ics\n");
+	for (int i = 0; i < G->n; i++)
+		ics[i] = i;
+	qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
 
+	//int ilow, ihigh, imid;
+	//double* dists = get_sorted_distances_no_duplicates(G, &ihigh, options);
+	double dlow, dhigh, dmid, d;
+	dlow = DBL_MAX;
+	dhigh = -1;
+	for (int c = 0; c < G->n; c++) {
+		for (int s = 0; s < G->m; s++) {
+			d = options->eval(c, s, G);
+			if (d < dlow)
+				dlow = d;
+			else if (d > dhigh)
+				dhigh = d;
+		}
+	}
 
-//Result bisection(Graph* G, int k, double bmin, double bmax, Result* res, double tol) {
-//	if (bmax - bmin < tol) {
-//		res->score = 3 * bmax;
-//		return *res;
-//	}
-//	else {
-//		Result res_tmp;
-//		double bmid = (bmin + bmax) / 2;
-//		res_tmp = range(G, k, bmid);
-//		if (res_tmp.score == 0) {
-//			return bisection(G, k, bmid, bmax, res, tol);
-//		}
-//		else {
-//			result_free(res);
-//			return bisection(G, k, bmin, bmid, &res_tmp, tol);
-//		}
-//	}
-//}
-//
-//Result plesnik(Graph* G, int k, double tol) {
-//	double bmin, bmax;
-//
-//	// Get bmin
-//	double dmin, dist;
-//	bmin = -1;
-//	for (int i = 0; i < G->n; i++) {
-//		dmin = INT_MAX;
-//		for (int j = 0; j < G->m; j++) {
-//			dist = G->D[G->C[i]][G->S[j]];
-//			if (dist < dmin) dmin = dist;
-//		}
-//		if (dmin > bmin) bmin = dmin;
-//	}
-//
-//	// Update bmin and get bmax
-//	Result res;
-//	bmax = bmin;
-//	for (res = range(G, k, bmax); res.score == 0; bmax *= 2);
-//
-//	return bisection(G, k, bmin, bmax, &res, tol);
-//}
+	BitSet* R = NULL;
+	BitSet* Ropt;
+	if ((Ropt = decision_solver(G, k, dlow, options, ics)) == NULL) {
+		if ((Ropt = decision_solver(G, k, dhigh, options, ics)) == NULL) {
+			printf("ERROR - decision_to_optimization failed: no solution found\n"); // This should never happen
+			return NULL;
+		}
+
+		while (dhigh - dlow > tol) {
+			if (R != NULL)
+				bitset_free(R);
+			dmid = (dhigh + dlow) / 2;
+			if ((R = decision_solver(G, k, dmid, options, ics)) == NULL) {
+				dlow = dmid;
+			}
+			else {
+				dhigh = dmid;
+				bitset_soft_copy(Ropt, R);
+			}
+		}
+	}
+
+	Result* res = result_new();
+	result_update(res, eval_score(G, Ropt, options), Ropt, G->S);
+
+	if (R != NULL)
+		bitset_free(R);
+	bitset_free(Ropt);
+	free(ics);
+
+	return res;
+}

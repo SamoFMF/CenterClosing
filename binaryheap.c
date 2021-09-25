@@ -101,7 +101,6 @@ void binary_heap_free(BinaryHeap* heap) {
 }
 
 PairIntDouble binary_heap_extract_min(BinaryHeap* heap) {
-	// TODO - preveri, kaj se zgodi, ce extractas zadnji element!!!
 	// Get node with min value
 	int node = heap->nodes[0];
 	double value = heap->heap[0];
