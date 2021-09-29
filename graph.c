@@ -544,7 +544,7 @@ Graph* read_or_library(char* filename) {
 			G->D[i + m][j + m] = DBL_MAX;
 		G->D[i + m][i + m] = 0.0;
 	}
-	floyd_warshall_algorithm(G->D, G->N);
+	//floyd_warshall_algorithm(G->D, G->N); // TODO - think if this is necessary?
 
 	return G;
 }

@@ -5,8 +5,6 @@
 #include "bitset.h"
 #include "graph.h"
 
-BitSet* range_adj(Graph* G, int k, double B, Options* options, int* ics);
-
 BitSet* range_first(Graph* G, int k, double B, Options* options, int* ics);
 
 BitSet* range_rand(Graph* G, int k, double B, Options* options, int* ics);

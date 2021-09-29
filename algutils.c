@@ -246,6 +246,7 @@ double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Opti
         dmin = DBL_MAX;
 
         // Find new closest
+        s = -1;
         for (int j = 0; j < G->m; j++) {
             if (!bitset_contains(R, j) && j != idx) {
                 dist = options->eval(c, j, G);
@@ -255,7 +256,6 @@ double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Opti
                 }
             }
         }
-        
         centers[s]->delta++;
         closest[i] = s;
     }

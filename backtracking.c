@@ -17,7 +17,7 @@ int backtracking_decision_recursive(Graph* G, int k, double B, BitSet* R, Binary
 		PairIntDouble pair = binary_heap_extract_min(queue);
 
 		// Keep center `pair.node`
-		if (queue->n > k && backtracking_decision_recursive(G, k, B, R, queue, centers, options, valcur, Ropt)) {
+		if (queue->n >= k && backtracking_decision_recursive(G, k, B, R, queue, centers, options, valcur, Ropt)) {
 			binary_heap_insert(queue);
 			return 1;
 		}
@@ -65,7 +65,7 @@ void backtracking_recursive(Graph* G, int k, BitSet* R, BinaryHeap* queue, Cente
 		PairIntDouble pair = binary_heap_extract_min(queue);
 
 		// Keep center `pair.node`
-		if (queue->n > k) {
+		if (queue->n >= k) {
 			backtracking_recursive(G, k, R, queue, centers, options, valcur, valopt, Ropt);
 		}
 

@@ -151,10 +151,12 @@
     <ClCompile Include="greedy.c" />
     <ClCompile Include="herustic.c" />
     <ClCompile Include="hochbaum.c" />
+    <ClCompile Include="independantset.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="plesnik.c" />
     <ClCompile Include="priorityfunctions.c" />
     <ClCompile Include="result_to_json.c" />
+    <ClCompile Include="setcover.c" />
     <ClCompile Include="tester.c" />
     <ClCompile Include="utils.c" />
   </ItemGroup>
@@ -170,10 +172,12 @@
     <ClInclude Include="greedy.h" />
     <ClInclude Include="heuristic.h" />
     <ClInclude Include="hochbaum.h" />
+    <ClInclude Include="independantset.h" />
     <ClInclude Include="plesnik.h" />
     <ClInclude Include="priorityfunctions.h" />
     <ClInclude Include="graphgenerators.h" />
     <ClInclude Include="result_to_json.h" />
+    <ClInclude Include="setcover.h" />
     <ClInclude Include="tester.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

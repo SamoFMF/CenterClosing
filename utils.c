@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include <time.h>
 #include "utils.h"
 
@@ -100,7 +101,7 @@ void floyd_warshall_algorithm(double** D, int n) {
 		if (k % 100 == 0) printf("%d\n", k);
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
-				if (D[i][k] < INT_MAX && D[k][j] < INT_MAX) {
+				if (D[i][k] < DBL_MAX && D[k][j] < DBL_MAX) {
 					dist = D[i][k] + D[k][j];
 					if (dist < D[i][j]) D[i][j] = dist;
 				}

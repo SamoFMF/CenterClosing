@@ -17,7 +17,7 @@ int compare_weights(void* cont, const void* x, const void* y) {
 }
 
 // Requires G->G
-BitSet* range_adj(Graph* G, int k, double B, Options* options, int* ics) {
+BitSet* independant_set_old(Graph* G, int k, double B, Options* options, int* ics) {
 	BitSet* R = bitset_new_full(G->m);
 
 	//int* ics;
@@ -28,7 +28,7 @@ BitSet* range_adj(Graph* G, int k, double B, Options* options, int* ics) {
 	//qsort_s(ics, G->n, sizeof * ics, compare_weights, G->H);
 	BitSet* covered = bitset_new(G->n);
 
-	int c, s, c1, s1, c2;
+	int c, s, c1, s1, c2, snode, cnode, snode1;
 	for (int i = 0; i < G->n; i++) {
 		c = ics[i];
 		if (!bitset_contains(covered, c)) {
@@ -41,7 +41,22 @@ BitSet* range_adj(Graph* G, int k, double B, Options* options, int* ics) {
 			}
 			else {
 				bitset_remove(R, s);
-				for (int ic1 = 0; ic1 < G->n; ic1++) {
+				snode = G->S[s];
+				for (int i1 = 0; i1 < G->n && options->eval(G->G[snode][i1], s, G) <= B; i1++) {
+					c1 = G->G[snode][i1];
+					cnode = G->C[c1];
+					for (int i2 = 0; i2 < G->m && options->eval(c1, G->G[cnode][i2], G) <= B; i2++) {
+						s1 = G->G[cnode][i2];
+						if (s1 == s)
+							continue;
+						snode1 = G->S[s1];
+						for (int i3 = 0; i3 < G->n && options->eval(G->G[snode1][i3], s1, G) <= B; i3++) {
+							c2 = G->G[snode1][i3];
+							bitset_add(covered, c2);
+						}
+					}
+				}
+				/*for (int ic1 = 0; ic1 < G->n; ic1++) {
 					c1 = G->G[G->S[s]][ic1];
 					if (options->eval(c1, s, G) <= B) {
 						for (int is1 = 0; is1 < G->m; is1++) {
@@ -62,7 +77,7 @@ BitSet* range_adj(Graph* G, int k, double B, Options* options, int* ics) {
 					}
 					else
 						break;
-				}
+				}*/
 			}
 		}
 	}
@@ -234,10 +249,6 @@ Result* plesnik(Graph* G, int k, Options* options, BitSet* (*decision_solver)(Gr
 
 	int ilow, ihigh, imid;
 	double* dists = get_sorted_distances_no_duplicates(G, &ihigh, options);
-
-	free(dists);
-
-	dists = get_sorted_distances_no_duplicates(G, &ihigh, options);
 
 	BitSet* R = NULL;
 	BitSet* Ropt;

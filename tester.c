@@ -13,6 +13,7 @@
 #include "exact.h"
 #include "backtracking.h"
 #include "bruteforce.h"
+#include "independantset.h"
 #include "result_to_json.h"
 
 double* test_approximate(Graph* G, Options* options, int kstart, int kend, int kstep, FILE* file) {
@@ -153,16 +154,16 @@ double* test_approximate(Graph* G, Options* options, int kstart, int kend, int k
 		result_free(res);
 		printf("\tplesnik_unlimited_rand\n");
 
-		//// Plesnik: range_adj
-		//start = clock();
-		//res = plesnik(G, k, options, range_adj);
-		//end = clock();
-		//write_entry(file, "plesnik_adj", res, k, get_time(start, end));
-		//fprintf(file, ", ");
-		//if (res->score < scoremin)
-		//	scoremin = res->score;
-		//result_free(res);
-		//printf("\tplesnik_adj\n");
+		// Independant Set
+		start = clock();
+		res = independant_set(G, k, options);
+		end = clock();
+		write_entry(file, "independant_set", res, k, get_time(start, end));
+		fprintf(file, ", ");
+		if (res->score < scoremin)
+			scoremin = res->score;
+		result_free(res);
+		printf("\independant_set\n");
 
 		// Cluster: Cardinality
 		start = clock();

@@ -18,6 +18,8 @@
 #include "heuristic.h"
 #include "result_to_json.h"
 #include "tester.h"
+#include "setcover.h"
+#include "independantset.h"
 
 //double get_time(clock_t start, clock_t end) {
 //    return ((double)(end - start)) / CLOCKS_PER_SEC;
@@ -78,7 +80,7 @@ void print_graph(Graph* G) {
 }
 
 void print_result(char* name, Result* R, int k, double ms) {
-    printf("\nRESULT %s:\nR: ", name);
+    printf("\nRESULT %s (k=%d):\nR: ", name, k);
     print_array_int(R->R, k);
     printf("Val: %f\n", R->score);
     printf("Solved in %4.0fms\n", 1000*ms);
@@ -136,11 +138,11 @@ int main() {
     int k;
 
     options = options_new();
-    options->eval = test_eval;
+    options->eval = test_eval1;
     options->get_first = hochbaum_start_best;
     options->get_priority = priority_eval_center;
 
-    printf("start ..");
+    /*printf("start ..");
     for (int i = 1; i < 41; i++) {
         sprintf_s(filenameIn, 100, "or_library/pmed/data/pmed%d.txt", i);
         printf("%s\n", filenameIn);
@@ -157,9 +159,221 @@ int main() {
 
         graph_free(G);
         free(scores);
+    }*/
+
+    /*G = read_or_library_pmed("or_library/pmed/data/pmed1.txt", &k);
+    Result* res;
+    for (int ki = 1; ki < 30; ki++) {
+        res = exact(G, ki, options);
+        print_result("exact", res, ki, 0.0);
+        result_free(res);
     }
 
-    printf("Done!\n");
+    printf("Done!\n");*/
+
+    // G = read_or_library("data/wilson_100_200_m50_plus.txt");
+    G = read_pajek("data/tree_270_36315_20.txt");
+    int m = 20;
+    int n = 250;
+    G->m = m;
+    G->n = n;
+    floyd_warshall_algorithm(G->D, G->N);
+    printf("\n");
+    // print_matrix_double(G->D, G->N);
+    G->S = malloc(m * sizeof * G->S);
+    for (int i = 0; i < m; i++)
+        G->S[i] = i;
+    G->C = malloc(n * sizeof * G->C);
+    for (int i = m; i < G->N; i++)
+        G->C[i - m] = i;
+    G->H = malloc(n * sizeof * G->H);
+    for (int i = 0; i < 2; i++)
+        G->H[i] = 5*5;
+    for (int i = 2; i < 24; i++)
+        G->H[i] = 4*4;
+    for (int i = 24; i < 59; i++)
+        G->H[i] = 3*3;
+    for (int i = 59; i < 157; i++)
+        G->H[i] = 2*2;
+    for (int i = 157; i < n; i++)
+        G->H[i] = 1;
+
+    printf("DONE READING!\n");
+    Result* res;
+    clock_t start, end;
+    clock_t start_out = clock();
+    for (int ki = 1; ki < G->m; ki++) {
+        start = clock();
+        res = exact(G, ki, options);
+        end = clock();
+        print_result("tree", res, ki, get_time(start, end));
+    }
+    clock_t end_out = clock();
+    printf("TIME = %f\n", get_time(start_out, end_out));
+
+    ////////////////////////
+    // SET COVER TEST
+    SetCover* Gsc = malloc(sizeof * Gsc);
+    Gsc->contains = bitset_new_full(5);
+    Gsc->n = 5;
+    Gsc->S = malloc(5 * sizeof * Gsc->S);
+    Gsc->S[0] = bitset_new(13);
+    bitset_add(Gsc->S[0], 0);
+    bitset_add(Gsc->S[0], 1);
+
+    Gsc->S[1] = bitset_new(13);
+    bitset_add(Gsc->S[1], 1);
+    bitset_add(Gsc->S[1], 2);
+    bitset_add(Gsc->S[1], 3);
+    bitset_add(Gsc->S[1], 4);
+
+    Gsc->S[2] = bitset_new(13);
+    bitset_add(Gsc->S[2], 5);
+    bitset_add(Gsc->S[2], 6);
+    bitset_add(Gsc->S[2], 7);
+    bitset_add(Gsc->S[2], 8);
+    bitset_add(Gsc->S[2], 9);
+    bitset_add(Gsc->S[2], 10);
+    bitset_add(Gsc->S[2], 11);
+    bitset_add(Gsc->S[2], 12);
+
+    Gsc->S[3] = bitset_new(13);
+    bitset_add(Gsc->S[3], 0);
+    bitset_add(Gsc->S[3], 2);
+    bitset_add(Gsc->S[3], 4);
+    bitset_add(Gsc->S[3], 6);
+    bitset_add(Gsc->S[3], 8);
+    bitset_add(Gsc->S[3], 10);
+    bitset_add(Gsc->S[3], 12);
+
+    Gsc->S[4] = bitset_new(13);
+    bitset_add(Gsc->S[4], 1);
+    bitset_add(Gsc->S[4], 3);
+    bitset_add(Gsc->S[4], 5);
+    bitset_add(Gsc->S[4], 7);
+    bitset_add(Gsc->S[4], 9);
+    bitset_add(Gsc->S[4], 11);
+    bitset_add(Gsc->S[4], 12);
+
+    BitSet* U = bitset_new_full(13);
+
+    ResultSetCover* MSC = minimum_set_cover(Gsc, U);
+    printf("\nRESULT OF SET COVER:\nlength = %d\n", MSC->length);
+    print_array_int(MSC->C, MSC->length);
+
+
+    ////////////////
+    // TEST: -> domset (set cover)
+    Graph* G1 = graph_new();
+    G1->D = malloc(6 * sizeof * G1->D);
+    for (int i = 0; i < 6; i++)
+        G1->D[i] = malloc(6 * sizeof * G1->D[i]);
+    double temp[6][6] = { {0,2,2,1,1,3},
+                          {2,0,2,1,1,1},
+                          {2,2,0,3,1,1},
+                          {1,1,3,0,2,2},
+                          {1,1,1,2,0,2},
+                          {3,1,1,2,2,0} };
+    for (int i = 0; i < 6; i++) {
+        for (int j = 0; j < 6; j++) {
+            G1->D[i][j] = temp[i][j];
+        }
+    }
+    G1->C = malloc(3 * sizeof * G1->C);
+    G1->C[0] = 0;
+    G1->C[1] = 1;
+    G1->C[2] = 2;
+    G1->S = malloc(3 * sizeof * G1->S);
+    G1->S[0] = 3;
+    G1->S[1] = 4;
+    G1->S[2] = 5;
+    G1->H = malloc(3 * sizeof * G1->H);
+    for (int i = 0; i < 3; i++)
+        G1->H[i] = 1.0;
+    G1->N = 6;
+    G1->n = 3;
+    G1->m = 3;
+    graph_add_sorted_adjacency_list(G1, options);
+
+    printf("DONE\n");
+
+    SetCover* SC1 = graph_to_setcover(G1, options, 1);
+    U = bitset_new_full(6);
+    MSC = minimum_set_cover(SC1, U);
+    printf("\nRESULT OF SET COVER:\nlength = %d\n", MSC->length);
+    print_array_int(MSC->C, MSC->length);
+
+    printf("DONE\n");
+
+    // Primer 2: data/moj1.net
+    printf("\n\n");
+    G = read_pajek("data/moj1.net");
+    BitSet* S_set = bitset_new(G->N);
+    int* S_arr = malloc(4 * sizeof(int));
+    S_arr[0] = 0;
+    S_arr[1] = 1;
+    S_arr[2] = 2;
+    S_arr[3] = 3;
+    bitset_add_from(S_set, S_arr, 4);
+    G->H = malloc(4 * sizeof(double));
+    G->H[0] = 5;
+    G->H[1] = 4;
+    G->H[2] = 3;
+    G->H[3] = 2;
+
+    graph_partition_nodes(G, S_set, 4);
+
+    print_graph(G);
+
+    k = 2;
+    options = options_new();
+    options->eval = test_eval1;
+    options->get_first = hochbaum_start_best;
+    options->get_priority = priority_eval_center;
+
+    graph_add_sorted_adjacency_list(G, options);
+
+    SC1 = graph_to_setcover(G, options, 190);
+    U = bitset_new_full(G->N);
+    MSC = minimum_set_cover(SC1, U);
+    printf("\nRESULT OF SET COVER:\nlength = %d\n", MSC->length);
+    print_array_int(MSC->C, MSC->length);
+
+    //////////// NEW
+    //int B = 190;
+    /*SetCover* SC2 = malloc(sizeof * SC2);
+    SC2->S = malloc(G->m * sizeof * SC2->S);
+    for (int i = 0; i < G->m; i++) {
+        SC2->S[i] = bitset_new(G->n);
+        int node = G->S[i];
+        for (int j = 0; j < G->n && options->eval(G->G[node][j], i, G) <= B; j++) {
+            bitset_add(SC2->S[i], G->G[node][j]);
+        }
+    }
+    SC2->contains = bitset_new_full(G->m);
+    SC2->n = G->m;*/
+    SetCover* SC2 = center_closing_to_setcover(G, options, 190);
+    printf("HERE\n");
+
+    U = bitset_new_full(G->n);
+    MSC = minimum_set_cover(SC2, U);
+    printf("\nRESULT OF SET COVER:\nlength = %d\n", MSC->length);
+    print_array_int(MSC->C, MSC->length);
+
+    // Test
+    Result* resTest = solve_using_setcover(G, 2, options);
+    print_result("setcover test", resTest, 2, 0.0);
+
+    resTest = independant_set(G, 1, options);
+    print_result("independent set", resTest, 1, 0.0);
+
+    /*start = clock();
+    for (int ki = 1; ki < G->m; ki++) {
+        res = backtracking(G, ki, options);
+        print_result("back", res, ki, 0.0);
+    }
+    end = clock();
+    printf("TIME = %f\n", get_time(start, end));*/
 
     //Graph* G = read_pajek("data/moj4.net");
     //BitSet* S_set = bitset_new(G->N);

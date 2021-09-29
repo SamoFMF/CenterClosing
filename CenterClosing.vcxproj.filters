@@ -93,6 +93,12 @@
     <ClCompile Include="result_to_json.c">
       <Filter>Source Files\Testers</Filter>
     </ClCompile>
+    <ClCompile Include="setcover.c">
+      <Filter>Source Files\algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="independantset.c">
+      <Filter>Source Files\algorithms</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bruteforce.h">
@@ -145,6 +151,12 @@
     </ClInclude>
     <ClInclude Include="result_to_json.h">
       <Filter>Header Files\Testers</Filter>
+    </ClInclude>
+    <ClInclude Include="setcover.h">
+      <Filter>Header Files\algorithms</Filter>
+    </ClInclude>
+    <ClInclude Include="independantset.h">
+      <Filter>Header Files\algorithms</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
