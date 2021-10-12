@@ -17,7 +17,15 @@ BitSet* bitset_new_full(int n);
 
 void bitset_free(BitSet* bitset);
 
+void bitset_reset(BitSet* bitset);
+
 int bitset_contains(BitSet* bitset, int i);
+
+int bitset_is_subset(BitSet* bitset, BitSet* subset);
+
+int bitset_get_first(BitSet* bitset);
+
+int* bitset_get_elements(BitSet* bitset);
 
 void bitset_add(BitSet* bitset, int i);
 

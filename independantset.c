@@ -10,7 +10,9 @@ BitSet* independant_set_decision(Graph* G, int k, double B, Options* options) {
 	BitSet* R = bitset_new_full(G->m);
 	BitSet* covered = bitset_new(G->n);
 
-	int c, s, c1, s1, c2, snode, cnode, snode1;
+	int s, c1, s1, c2, snode, cnode, snode1;
+	BitSet* visited_C = bitset_new(G->n);
+	BitSet* visited_S = bitset_new(G->m);
 	for (int c = 0; c < G->n; c++) {
 		if (!bitset_contains(covered, c)) {
 			s = G->G[G->C[c]][0];
@@ -24,11 +26,15 @@ BitSet* independant_set_decision(Graph* G, int k, double B, Options* options) {
 				snode = G->S[s];
 				for (int i1 = 0; i1 < G->n && options->eval(G->G[snode][i1], s, G) <= B; i1++) {
 					c1 = G->G[snode][i1];
+					if (bitset_contains(visited_C, c1))
+						continue;
+					bitset_add(visited_C, c1);
 					cnode = G->C[c1];
 					for (int i2 = 0; i2 < G->m && options->eval(c1, G->G[cnode][i2], G) <= B; i2++) {
 						s1 = G->G[cnode][i2];
-						if (s1 == s)
+						if (s1 == s || bitset_contains(visited_S, s1))
 							continue;
+						bitset_add(visited_S, s1);
 						snode1 = G->S[s1];
 						for (int i3 = 0; i3 < G->n && options->eval(G->G[snode1][i3], s1, G) <= B; i3++) {
 							c2 = G->G[snode1][i3];
@@ -41,6 +47,8 @@ BitSet* independant_set_decision(Graph* G, int k, double B, Options* options) {
 	}
 
 	bitset_free(covered);
+	bitset_free(visited_C);
+	bitset_free(visited_S);
 
 	if (R->numOfElements >= k) {
 		return R;
