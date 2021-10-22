@@ -84,7 +84,7 @@
     <ClCompile Include="backtracking.c">
       <Filter>Source Files\algorithms</Filter>
     </ClCompile>
-    <ClCompile Include="herustic.c">
+    <ClCompile Include="heuristic.c">
       <Filter>Source Files\algorithms</Filter>
     </ClCompile>
     <ClCompile Include="tester.c">
@@ -98,6 +98,9 @@
     </ClCompile>
     <ClCompile Include="independantset.c">
       <Filter>Source Files\algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="main1.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

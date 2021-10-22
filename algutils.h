@@ -69,4 +69,11 @@ void centers_redistribute_closest(Center** centers, Graph* G, int idx, int* clos
 // Distance related
 double* get_sorted_distances_no_duplicates(Graph* G, int* new_len, Options* options);
 
+double* sorted_distances_no_duplicates_add_thirds(double* D, int n, int* new_len);
+
+// Evals
+double unweighted_eval(int c, int s, Graph* G);
+
+double weighted_eval(int c, int s, Graph* G);
+
 #endif

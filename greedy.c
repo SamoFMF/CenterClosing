@@ -12,7 +12,7 @@ Result* greedy_basic(Graph* G, int k, Options* options) {
 	double dmin = DBL_MAX;
 	int imin;
 	for (int ki = 0; ki < k; ki++) {
-		printf("ki=%d\n", ki);
+		// printf("ki=%d\n", ki);
 		dmin = DBL_MAX;
 		imin = -1;
 		for (int i = 0; i < G->m; i++) {

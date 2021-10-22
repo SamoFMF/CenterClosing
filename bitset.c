@@ -98,7 +98,7 @@ int bitset_is_subset(BitSet* bitset, BitSet* subset) {
 int bitset_get_first(BitSet* bitset) { // Returns first element in bitset
 	if (bitset->numOfElements == 0) {
 		printf("EMPTY SET DOES NOT HAVE A 1st ELEMENT!\n");
-		return NULL;
+		return -1;
 	}
 	for (int i = 0; i < bitset->N; i++) {
 		if (bitset->set[i] != 0) {

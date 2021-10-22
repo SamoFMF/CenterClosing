@@ -149,10 +149,11 @@
     <ClCompile Include="graph.c" />
     <ClCompile Include="graphgenerators.c" />
     <ClCompile Include="greedy.c" />
-    <ClCompile Include="herustic.c" />
+    <ClCompile Include="heuristic.c" />
     <ClCompile Include="hochbaum.c" />
     <ClCompile Include="independantset.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="main1.c" />
     <ClCompile Include="plesnik.c" />
     <ClCompile Include="priorityfunctions.c" />
     <ClCompile Include="result_to_json.c" />

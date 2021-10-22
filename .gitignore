@@ -365,3 +365,4 @@ FodyWeavers.xsd
 # Data
 /data
 /or_library
+/generated

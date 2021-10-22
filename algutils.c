@@ -42,7 +42,10 @@ void result_free(Result* result) {
 void result_update(Result* result, double val, BitSet* R, int* S) {
     if (result->R != NULL)
         free(result->R);
-    if ((result->R = malloc(R->n * sizeof * result->R)) != NULL) {
+    if (R->numOfElements == 0) {
+        result->score = val;
+        result->R = NULL;
+    } else if ((result->R = malloc(R->numOfElements * sizeof * result->R)) != NULL) {
         result->score = val;
         int i = 0;
         for (int j = 0; j < R->n; j++)
@@ -255,6 +258,13 @@ double centers_redistribute(Center** centers, Graph* G, BitSet* R, int idx, Opti
                     s = j;
                 }
             }
+        }
+        if (s == -1) { // No center with distance < DBL_MAX exists anymore, choose any non-removed center
+            for (int j = 0; j < G->m; j++)
+                if (!bitset_contains(R, j) && j != idx) {
+                    s = j;
+                    break;
+                }
         }
         centers[s]->delta++;
         closest[i] = s;
@@ -470,4 +480,38 @@ double* get_sorted_distances_no_duplicates(Graph* G, int* new_len, Options* opti
     else
         printf("ERROR - Ran out of memory: get_sorted_distances_no_duplicates - dists");
     return dists;
+}
+
+double* sorted_distances_no_duplicates_add_thirds(double* D, int n, int* new_len) {
+    double* dists;
+    if ((dists = malloc((2*n) * sizeof * dists)) == NULL)
+        printf("ERROR - Ran out of memory: sorted_distances_no_duplicates_add_thirds - dists");
+    int len = 0;
+    int idx = 0;
+    for (int i = 0; i < n;) {
+        if (idx >= n) {
+            dists[len++] = D[i++];
+        }
+        else if (D[idx] == 3 * D[i]) {
+            dists[len++] = D[i++];
+            idx++;
+        }
+        else if (D[idx] < 3 * D[i]) {
+            dists[len++] = D[idx++] / 3;
+        }
+        else {
+            dists[len++] = D[i++];
+        }
+    }
+    *new_len = len;
+    return dists;
+}
+
+// Evals
+double unweighted_eval(int c, int s, Graph* G) {
+    return G->D[G->C[c]][G->S[s]];
+}
+
+double weighted_eval(int c, int s, Graph* G) {
+    return G->H[c] * G->D[G->C[c]][G->S[s]];
 }

@@ -6,6 +6,10 @@
 
 Result* cluster_cardinality(Graph* G, int k, Options* options);
 
+Result* cluster_cardinality_basic(Graph* G, int k, Options* options);
+
 Result* cluster_radius(Graph* G, int k, Options* options);
+
+Result* cluster_radius_basic(Graph* G, int k, Options* options);
 
 #endif

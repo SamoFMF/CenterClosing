@@ -89,7 +89,7 @@ void resultsetcover_add_from(ResultSetCover* res, int* xs, int n) {
 	}
 }
 
-int setcover_remove_set(SetCover* SC, BitSet* U, int remove_idx, int** S_loc, int*** removed_loc, int** removed_contains_loc) {
+int setcover_remove_set(SetCover* SC, BitSet* U, int remove_idx, int** S_loc, int*** removed_loc) {
 	// Setup
 	//int* S;
 	int nS = SC->S[remove_idx]->numOfElements;
@@ -114,22 +114,25 @@ int setcover_remove_set(SetCover* SC, BitSet* U, int remove_idx, int** S_loc, in
 	free(*removed_loc);
 	*removed_loc = removed;
 	// Remove elements
-	int* removed_contains;
+	/*int* removed_contains;
 	if ((removed_contains = malloc(nS * sizeof * removed_contains)) == NULL)
 		printf("ERROR - Ran out of memory: setcover_remove_set - removed_contains\n");
 	for (int i = 0; i < nS; i++)
 		removed_contains[i] = -1;
 	free(*removed_contains_loc);
-	*removed_contains_loc = removed_contains;
+	*removed_contains_loc = removed_contains;*/
 	/*int removed_max_i = bitset_contains(SC->contains, max_i);
 	if (removed_max_i)
 		bitset_remove(SC->contains, max_i);*/
 	int idx = 0;
-	for (int i = 0; i < nS; i++)
+	/*for (int i = 0; i < nS; i++)
 		if (bitset_contains(U, S[i])) {
 			bitset_remove(U, S[i]);
 			removed_contains[idx++] = S[i];
-		}
+		}*/
+	for (int i = 0; i < nS; i++)
+		bitset_remove(U, S[i]);
+
 	for (int i = 0; i < SC->n; i++) {
 		if (bitset_contains(SC->contains, i)) {
 			idx = 0;
@@ -145,7 +148,7 @@ int setcover_remove_set(SetCover* SC, BitSet* U, int remove_idx, int** S_loc, in
 	return nS;
 }
 
-void setcover_remove_set_undo(SetCover* SC, BitSet* U, int nS, int* S, int** removed, int* removed_contains) {
+void setcover_remove_set_undo(SetCover* SC, BitSet* U, int nS, int* S, int** removed) {
 	// Add removed elements back to corresponding sets
 	for (int i = 0; i < SC->n; i++) {
 		if (removed[i][0] < 0)
@@ -155,15 +158,95 @@ void setcover_remove_set_undo(SetCover* SC, BitSet* U, int nS, int* S, int** rem
 		for (int j = 0; j < nS && removed[i][j] >= 0; j++)
 			bitset_add(SC->S[i], removed[i][j]);
 	}
-	for (int i = 0; i < nS && removed_contains[i] >= 0; i++)
-		bitset_add(U, removed_contains[i]);
+	/*for (int i = 0; i < nS && removed_contains[i] >= 0; i++)
+		bitset_add(U, removed_contains[i]);*/
+	for (int i = 0; i < nS; i++)
+		bitset_add(U, S[i]);
 
 	// Free memory
 	free(S);
 	for (int i = 0; i < SC->n; i++)
 		free(removed[i]);
 	free(removed);
-	free(removed_contains);
+	//free(removed_contains);
+}
+
+void maximum_matching_old(SetCover* SC, BitSet* U) {
+	int** G;
+	if ((G = malloc(U->n * sizeof * G)) == NULL)
+		printf("ERROR - Ran out of memory: maximum_matching - G\n");
+	for (int i = 0; i < U->n; i++) {
+		if ((G[i] = malloc(U->n * sizeof * G[i])) == NULL)
+			printf("ERROR - Ran out of memory: maximum_matching - G[%d]\n", i);
+	}
+	int* lens;
+	if ((lens = calloc(U->n, sizeof * lens)) == NULL)
+		printf("ERROR - Ran out of memory: maximum_matching - lens\n");
+	int* xs;
+	BitSet* S;
+	int u, v;
+	BitSet* covered = bitset_new(U->n);
+	for (int i = 0; i < SC->n; i++) {
+		if (bitset_contains(SC->contains, i)) {
+			S = SC->S[i];
+			if (S->numOfElements == 2) {
+				xs = bitset_get_elements(S);
+				u = xs[0];
+				v = xs[1];
+				G[u][lens[u]++] = v;
+				G[v][lens[v]++] = u;
+				free(xs);
+			}
+		}
+	}
+}
+
+ResultSetCover* maximum_matching(SetCover* SC, BitSet* U) {
+	BitSet* S;
+	int* xs;
+	int u, v;
+	BitSet* covered = bitset_new(U->n);
+	ResultSetCover* res = resultsetcover_new();
+	for (int i = 0; i < SC->n; i++) {
+		if (bitset_contains(SC->contains, i)) {
+			S = SC->S[i];
+			if (S->numOfElements == 2) {
+				xs = bitset_get_elements(S);
+				u = xs[0]; v = xs[1];
+				if (!bitset_contains(covered, u) && !bitset_contains(covered, v)) {
+					resultsetcover_add(res, i);
+					bitset_add(covered, u);
+					bitset_add(covered, v);
+				}
+				free(xs);
+			}
+		}
+	}
+	if (covered->numOfElements == U->numOfElements) {
+		bitset_free(covered);
+		return res;
+	}
+	for (int i = 0; i < SC->n; i++) {
+		if (bitset_contains(SC->contains, i)) {
+			S = SC->S[i];
+			xs = bitset_get_elements(S);
+			for (int j = 0; j < S->numOfElements; j++) {
+				if (!bitset_contains(covered, xs[j])) {
+					resultsetcover_add(res, i);
+					bitset_add(covered, xs[j]);
+				}
+			}
+			free(xs);
+		}
+	}
+	if (covered->numOfElements == U->numOfElements) {
+		bitset_free(covered);
+		return res;
+	}
+	else {
+		bitset_free(covered);
+		return NULL;
+	}
 }
 
 ResultSetCover* minimum_set_cover(SetCover* SC, BitSet* U) {
@@ -200,8 +283,8 @@ ResultSetCover* minimum_set_cover(SetCover* SC, BitSet* U) {
 	// Setup
 	int* S = malloc(sizeof * S);
 	int** removed = malloc(sizeof * removed);
-	int* removed_contains = malloc(sizeof * removed_contains);
-	int nS = setcover_remove_set(SC, U, max_i, &S, &removed, &removed_contains);
+	//int* removed_contains = malloc(sizeof * removed_contains);
+	int nS = setcover_remove_set(SC, U, max_i, &S, &removed);
 	//// Setup
 	//int* S;
 	//int nS = SC->S[max_i]->numOfElements;
@@ -252,7 +335,7 @@ ResultSetCover* minimum_set_cover(SetCover* SC, BitSet* U) {
 		resultsetcover_add(C1, max_i);
 
 	// Add removed elements back to corresponding sets
-	setcover_remove_set_undo(SC, U, nS, S, removed, removed_contains);
+	setcover_remove_set_undo(SC, U, nS, S, removed);
 	bitset_add(SC->contains, max_i);
 	//for (int i = 0; i < SC->n; i++) {
 	//	if (removed[i][0] < 0)
@@ -365,8 +448,8 @@ ResultSetCover* minimum_set_cover_upgraded(SetCover* SC, BitSet* U) { // Using f
 		// Choose contained_in[0]
 		int* S = malloc(sizeof * S);
 		int** removed = malloc(sizeof * removed);
-		int* removed_contains = malloc(sizeof * removed_contains);
-		int nS = setcover_remove_set(SC, U, max_i, &S, &removed, &removed_contains);
+		//int* removed_contains = malloc(sizeof * removed_contains);
+		int nS = setcover_remove_set(SC, U, contained_in[0], &S, &removed);
 		bitset_remove(SC->contains, contained_in[0]);
 
 		ResultSetCover* C = minimum_set_cover_upgraded(SC, U);
@@ -377,7 +460,7 @@ ResultSetCover* minimum_set_cover_upgraded(SetCover* SC, BitSet* U) { // Using f
 			bitset_add(SC->contains, contained_in[i]);
 		}*/
 		// Add removed elements back to corresponding sets
-		setcover_remove_set_undo(SC, U, nS, S, removed, removed_contains);
+		setcover_remove_set_undo(SC, U, nS, S, removed);
 		bitset_add(SC->contains, contained_in[0]);
 
 		free(frequency);
@@ -392,69 +475,32 @@ ResultSetCover* minimum_set_cover_upgraded(SetCover* SC, BitSet* U) { // Using f
 		free(contained_in);
 	}
 
-	// Reduction Rule 2
-	if (max_cardinality == 1) {
-		int* removed_U;
-		if ((removed_U = malloc(U->numOfElements * sizeof * removed_U)) == NULL)
-			printf("ERROR - Ran out of memory: minimum_set_cover - removed_U\n");
-		int* removed_SC;
-		if ((removed_SC = malloc(U->numOfElements * sizeof * removed_SC)) == NULL)
-			printf("ERROR - Ran out of memory: minimum_set_cover - removed_SC\n");
-		int rlen = 0;
-		int node;
-		for (int i = 0; i < SC->n; i++) {
-			if (bitset_contains(SC->contains, i)) {
-				// Choose this set to cover the corresponding node in U
-				node = bitset_get_first(SC->S[i]);
-				if (bitset_contains(U, node)) {
-					bitset_remove(U, node);
-					removed_U[rlen] = node;
-					removed_SC[rlen++] = i;
-				}
-			}
-		}
-
-		ResultSetCover* C;
-		if (U->numOfElements == 0) {
-			// Found solution
-			C = resultsetcover_new();
-			resultsetcover_add_from(C, removed_SC, rlen);
-		}
-		else {
-			C = NULL;
-		}
-
-		// Undo changes & free memory
-		for (int i = 0; i < rlen; i++) {
-			bitset_add(U, removed_U[i]);
-		}
-		free(removed_U);
-		free(removed_SC);
-
-		return C;
-	}
-
 	// Reduction Rule 3
-	int idx;
+	int idx, is_subset;
 	int* removed_red;
 	if ((removed_red = malloc(SC->n * sizeof * removed_red)) == NULL)
 		printf("ERROR - Ran out of memory: minimum_set_cover_upgraded - remvoed_red\n");
 	int rlen = 0;
 	for (int i = 0; i < SC->n; i++) {
 		if (bitset_contains(SC->contains, i)) {
+			is_subset = 0;
 			for (int j = i + 1; j < SC->n; j++) {
 				if (bitset_contains(SC->contains, j)) {
 					if (bitset_is_subset(SC->S[i], SC->S[j]))
 						idx = j;
-					else if (bitset_is_subset(SC->S[j], SC->S[i]))
-						idx = i;
-					else
+					else {
 						idx = -1;
+						is_subset |= bitset_is_subset(SC->S[j], SC->S[i]);
+					}
 					if (idx >= 0) {
 						bitset_remove(SC->contains, idx);
 						removed_red[rlen++] = idx;
 					}
 				}
+			}
+			if (is_subset) {
+				bitset_remove(SC->contains, i);
+				removed_red[rlen++] = i;
 			}
 		}
 	}
@@ -470,6 +516,50 @@ ResultSetCover* minimum_set_cover_upgraded(SetCover* SC, BitSet* U) { // Using f
 		return C;
 	}
 
+	// Reduction Rule 2 & 4
+	if (max_cardinality <= 2)
+		return maximum_matching(SC, U);
+	//if (max_cardinality == 1) {
+	//	int* removed_U;
+	//	if ((removed_U = malloc(U->numOfElements * sizeof * removed_U)) == NULL)
+	//		printf("ERROR - Ran out of memory: minimum_set_cover - removed_U\n");
+	//	int* removed_SC;
+	//	if ((removed_SC = malloc(U->numOfElements * sizeof * removed_SC)) == NULL)
+	//		printf("ERROR - Ran out of memory: minimum_set_cover - removed_SC\n");
+	//	int rlen = 0;
+	//	int node;
+	//	for (int i = 0; i < SC->n; i++) {
+	//		if (bitset_contains(SC->contains, i)) {
+	//			// Choose this set to cover the corresponding node in U
+	//			node = bitset_get_first(SC->S[i]);
+	//			if (bitset_contains(U, node)) {
+	//				bitset_remove(U, node);
+	//				removed_U[rlen] = node;
+	//				removed_SC[rlen++] = i;
+	//			}
+	//		}
+	//	}
+
+	//	ResultSetCover* C;
+	//	if (U->numOfElements == 0) {
+	//		// Found solution
+	//		C = resultsetcover_new();
+	//		resultsetcover_add_from(C, removed_SC, rlen);
+	//	}
+	//	else {
+	//		C = NULL;
+	//	}
+
+	//	// Undo changes & free memory
+	//	for (int i = 0; i < rlen; i++) {
+	//		bitset_add(U, removed_U[i]);
+	//	}
+	//	free(removed_U);
+	//	free(removed_SC);
+
+	//	return C;
+	//}
+
 	// Get C2
 	//bitset_remove(SC->contains, max_i);
 	int removed_max_i = bitset_contains(SC->contains, max_i);
@@ -481,8 +571,8 @@ ResultSetCover* minimum_set_cover_upgraded(SetCover* SC, BitSet* U) { // Using f
 	// Setup
 	int* S = malloc(sizeof * S);
 	int** removed = malloc(sizeof * removed);
-	int* removed_contains = malloc(sizeof * removed_contains);
-	int nS = setcover_remove_set(SC, U, max_i, &S, &removed, &removed_contains);
+	//int* removed_contains = malloc(sizeof * removed_contains);
+	int nS = setcover_remove_set(SC, U, max_i, &S, &removed);
 	bitset_remove(SC->contains, max_i);
 
 	ResultSetCover* C1 = minimum_set_cover_upgraded(SC, U);
@@ -490,7 +580,7 @@ ResultSetCover* minimum_set_cover_upgraded(SetCover* SC, BitSet* U) { // Using f
 		resultsetcover_add(C1, max_i);
 
 	// Add removed elements back to corresponding sets
-	setcover_remove_set_undo(SC, U, nS, S, removed, removed_contains);
+	setcover_remove_set_undo(SC, U, nS, S, removed);
 	bitset_add(SC->contains, max_i);
 
 	// Return smaller set cover out of C1 and C2, or NULL if both are NULL
@@ -510,7 +600,195 @@ ResultSetCover* minimum_set_cover_upgraded(SetCover* SC, BitSet* U) { // Using f
 	}
 }
 
-Result* solve_using_setcover(Graph* G, int k, Options* options) {
+ResultSetCover* minimum_set_cover_upgraded_decision(SetCover* SC, BitSet* U, int k) { // Using first 2 reduction rules
+	if (SC->contains->numOfElements == 0) {
+		if (U->numOfElements == 0) {
+			return resultsetcover_new();
+		}
+		else {
+			return NULL;
+		}
+	}
+	else if (k == 0)
+		return NULL;
+
+	// Reduction Rule 1
+	// Check if there exists $u \in U$ that is only contained in 1 $S \in SC$
+	int* frequency;
+	if ((frequency = calloc(U->numOfElements, sizeof * frequency)) == NULL)
+		printf("ERROR - Ran out of memory: minimum_set_cover_upgraded_decision - frequency");
+	int* elements;
+	if ((elements = malloc(U->numOfElements * sizeof * elements)) == NULL)
+		printf("ERROR - Ran out of memory: minimum_set_cover_upgraded_decision - elements");
+	int elen = 0;
+	int cur_num;
+	for (int i = 0; i < U->N; i++) {
+		cur_num = U->set[i];
+		for (int j = 0; j < U->size && elen < U->numOfElements; j++) {
+			if ((cur_num & 1) == 1) {
+				elements[elen++] = i * U->size + j;
+			}
+			cur_num >>= 1;
+		}
+	}
+	int* contained_in;
+	if ((contained_in = malloc(U->numOfElements * sizeof * contained_in)) == NULL)
+		printf("ERROR - Ran out of memory: minimum_set_cover_upgraded_decision - elements");
+	// Calculate it in the same loop as max cardinality
+
+	// Let $S \in SC->S$ be of maximum cardinality
+	int max_cardinality = 0;
+	int max_i;
+	for (int i = 0; i < SC->n; i++) {
+		if (bitset_contains(SC->contains, i)) {
+			// Base algorithm
+			if (SC->S[i]->numOfElements > max_cardinality) {
+				max_cardinality = SC->S[i]->numOfElements;
+				max_i = i;
+			}
+			// Reduction Rule 1
+			for (int j = 0; j < U->numOfElements; j++) {
+				if (bitset_contains(SC->S[i], elements[j])) {
+					frequency[j]++;
+					contained_in[j] = i;
+				}
+			}
+		}
+	}
+
+	// Continuation of Recution Rule 1
+	int rule_one_idx = -1;
+	/*for (int i = 0; i < elen; ) {
+		if (frequency[i] != 1) {
+			elen--;
+			swap_int(frequency, i, elen);
+			swap_int(elements, i, elen);
+			swap_int(contained_in, i, elen);
+		}
+		else {
+			i++;
+		}
+	}*/
+	for (int i = 0; i < elen; i++) {
+		if (frequency[i] == 1) {
+			rule_one_idx = i;
+			break;
+		}
+	}
+	if (rule_one_idx >= 0) { // Choose the first $e \in U$ with frequency 1
+		// Choose contained_in[0]
+		int* S = malloc(sizeof * S);
+		int** removed = malloc(sizeof * removed);
+		//int* removed_contains = malloc(sizeof * removed_contains);
+		int nS = setcover_remove_set(SC, U, contained_in[rule_one_idx], &S, &removed);
+		bitset_remove(SC->contains, contained_in[rule_one_idx]);
+
+		ResultSetCover* C = minimum_set_cover_upgraded_decision(SC, U, k - 1);
+		if (C != NULL)
+			resultsetcover_add(C, contained_in[rule_one_idx]);
+		/*for (int i = 0; i < elen; i++) {
+			bitset_add(U, elements[i]);
+			bitset_add(SC->contains, contained_in[i]);
+		}*/
+		// Add removed elements back to corresponding sets
+		setcover_remove_set_undo(SC, U, nS, S, removed);
+		bitset_add(SC->contains, contained_in[rule_one_idx]);
+
+		free(frequency);
+		free(elements);
+		free(contained_in);
+
+		return C;
+	}
+	else {
+		free(frequency);
+		free(elements);
+		free(contained_in);
+	}
+
+	// Reduction Rule 3
+	int idx, is_subset;
+	int* removed_red;
+	if ((removed_red = malloc(SC->n * sizeof * removed_red)) == NULL)
+		printf("ERROR - Ran out of memory: minimum_set_cover_upgraded_decision - remvoed_red\n");
+	int rlen = 0;
+	for (int i = 0; i < SC->n; i++) {
+		if (bitset_contains(SC->contains, i)) {
+			is_subset = 0;
+			for (int j = i + 1; j < SC->n; j++) {
+				if (bitset_contains(SC->contains, j)) {
+					if (bitset_is_subset(SC->S[i], SC->S[j]))
+						idx = j;
+					else {
+						idx = -1;
+						is_subset |= bitset_is_subset(SC->S[j], SC->S[i]);
+					}
+					if (idx >= 0) {
+						bitset_remove(SC->contains, idx);
+						removed_red[rlen++] = idx;
+					}
+				}
+			}
+			if (is_subset) {
+				bitset_remove(SC->contains, i);
+				removed_red[rlen++] = i;
+			}
+		}
+	}
+	if (rlen > 0) {
+		ResultSetCover* C = minimum_set_cover_upgraded_decision(SC, U, k);
+
+		// Undo changes & free memory
+		for (int i = 0; i < rlen; i++) {
+			bitset_add(SC->contains, removed_red[i]);
+		}
+		free(removed_red);
+
+		return C;
+	}
+
+	// Reduction Rule 2 & 4
+	if (max_cardinality <= 2) {
+		ResultSetCover* C = maximum_matching(SC, U);
+		if (C->length <= k)
+			return C;
+		else {
+			free(C);
+			return NULL;
+		}
+	}
+
+	// Get C1
+	// Setup
+	int* S = malloc(sizeof * S);
+	int** removed = malloc(sizeof * removed);
+	//int* removed_contains = malloc(sizeof * removed_contains);
+	int nS = setcover_remove_set(SC, U, max_i, &S, &removed);
+	bitset_remove(SC->contains, max_i);
+
+	ResultSetCover* C1 = minimum_set_cover_upgraded_decision(SC, U, k - 1);
+
+	// Add removed elements back to corresponding sets
+	setcover_remove_set_undo(SC, U, nS, S, removed);
+	bitset_add(SC->contains, max_i);
+
+	// Return smaller set cover out of C1 and C2, or NULL if both are NULL
+	if (C1 != NULL) {
+		resultsetcover_add(C1, max_i);
+		return C1;
+	}
+
+	// Get C2
+	//bitset_remove(SC->contains, max_i);
+	//int removed_max_i = bitset_contains(SC->contains, max_i);
+	//if (removed_max_i)
+	bitset_remove(SC->contains, max_i);
+	ResultSetCover* C2 = minimum_set_cover_upgraded_decision(SC, U, k);
+	bitset_add(SC->contains, max_i);
+	return C2;
+}
+
+Result* solve_using_setcover_slow(Graph* G, int k, Options* options) {
 	int ilow, ihigh, imid;
 	double* dists = get_sorted_distances_no_duplicates(G, &ihigh, options);
 
@@ -538,6 +816,9 @@ Result* solve_using_setcover(Graph* G, int k, Options* options) {
 			}
 		}
 	}
+	else {
+		ihigh = 0;
+	}
 
 	// Create Result*
 	Result* res = result_new();
@@ -545,6 +826,46 @@ Result* solve_using_setcover(Graph* G, int k, Options* options) {
 	BitSet* removed_centers = bitset_new_full(G->m);
 	for (int i = 0; i < resOpt->length; i++)
 		bitset_add(removed_centers, resOpt->C[i]);
+	result_update(res, dists[ihigh], removed_centers, G->S);
+	bitset_free(removed_centers);
+	resultsetcover_free(resOpt);
+	free(dists);
+	return res;
+}
+
+Result* solve_using_setcover(Graph* G, int k, Options* options) {
+	int ilow, ihigh, imid;
+	double* dists = get_sorted_distances_no_duplicates(G, &ihigh, options);
+
+	ResultSetCover* resOpt;
+	ResultSetCover* resTemp;
+	BitSet* U = bitset_new_full(G->n);
+	if (((resOpt = minimum_set_cover_upgraded_decision(center_closing_to_setcover(G, options, dists[0]), U, G->m - k)) == NULL)) {
+		ihigh--;
+		if (((resOpt = minimum_set_cover_upgraded_decision(center_closing_to_setcover(G, options, dists[ihigh]), U, G->m - k)) == NULL)) {
+			printf("ERROR - backtracking_decision_to_optimization failed: no solution found\n"); // This should never happen
+			return NULL;
+		}
+		ilow = 0;
+		while (ihigh - ilow > 1) {
+			imid = (ihigh + ilow) / 2;
+			if (((resTemp = minimum_set_cover_upgraded_decision(center_closing_to_setcover(G, options, dists[imid]), U, G->m - k)) == NULL)) {
+				ilow = imid;
+			}
+			else {
+				resultsetcover_free(resOpt);
+				resOpt = resTemp;
+				ihigh = imid;
+			}
+		}
+	}
+
+	// Create Result*
+	Result* res = result_new();
+	res->score = dists[ihigh];
+	BitSet* removed_centers = bitset_new_full(G->m);
+	for (int i = 0; i < resOpt->length; i++)
+		bitset_remove(removed_centers, resOpt->C[i]);
 	result_update(res, dists[ihigh], removed_centers, G->S);
 	bitset_free(removed_centers);
 	resultsetcover_free(resOpt);
