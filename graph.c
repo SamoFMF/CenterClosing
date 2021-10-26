@@ -501,7 +501,7 @@ void write_pajek_dist(char* filename, double** D, int n) {
 	fclose(file);
 }
 
-// Read OR-Library
+// Read OR-Library (cap)
 Graph* read_or_library(char* filename) {
 	Graph* G = graph_new();
 	int n, m, w;

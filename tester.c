@@ -398,9 +398,11 @@ void test_exact(Graph* G, Options* options, int kstart, int kend, int kstep, FIL
 		}
 
 		// Set Cover
-		if (bitset_contains(settings->algorithms, 'f' - 97) && scores != NULL) {
+		//if (bitset_contains(settings->algorithms, 'f' - 97) && scores != NULL) {
+		if (bitset_contains(settings->algorithms, 'f' - 97)) {
 			start = clock();
-			res = exact_bound(G, k, options, scores[(k - kstart) / kstep]);
+			//res = exact_bound(G, k, options, scores[(k - kstart) / kstep]);
+			res = exact_pclstp(G, k, options);
 			end = clock();
 			write_entry(file, "bnb+", res, k, get_time(start, end));
 			if (k + kstep >= kend)
@@ -495,7 +497,7 @@ double* test_approximate(Graph* G, Options* options, int kstart, int kend, int k
 			start = clock();
 			res = plesnik(G, k, options, range_closest);
 			end = clock();
-			write_entry(file, "pclosest", res, k, get_time(start, end));
+			write_entry(file, "pclst", res, k, get_time(start, end));
 			if ((settings->algorithms->set[0] < (1 << 10)) && (k + kstep) >= kend)
 				fprintf(file, "]}");
 			else
@@ -504,7 +506,7 @@ double* test_approximate(Graph* G, Options* options, int kstart, int kend, int k
 				scoremin = res->score;
 			result_free(res);
 			if (settings->notifications)
-				printf("\tpclosest\n");
+				printf("\tpclst\n");
 		}
 
 		// Plesnik+: range_rand
@@ -557,7 +559,7 @@ double* test_approximate(Graph* G, Options* options, int kstart, int kend, int k
 			start = clock();
 			res = plesnik_unlimited(G, k, options, range_closest);
 			end = clock();
-			write_entry(file, "pclosest+", res, k, get_time(start, end));
+			write_entry(file, "pclst+", res, k, get_time(start, end));
 			if ((settings->algorithms->set[0] < (1 << 13)) && (k + kstep) >= kend)
 				fprintf(file, "]}");
 			else
@@ -566,7 +568,7 @@ double* test_approximate(Graph* G, Options* options, int kstart, int kend, int k
 				scoremin = res->score;
 			result_free(res);
 			if (settings->notifications)
-				printf("\tpclosest+\n");
+				printf("\tpclst+\n");
 		}
 
 		// Hochbaum: random

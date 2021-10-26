@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "algutils.h"
 #include "priorityfunctions.h"
+#include "plesnik.h"
 
 
 void exact_recursive(Graph* G, int k, BitSet* R, BinaryHeap* queue, Center** centers, Options* options, double valcur, double* valopt, BitSet* Ropt) {
@@ -138,6 +139,42 @@ Result* exact_bound(Graph* G, int k, Options* options, double valmax) {
 	BitSet* R = bitset_new(G->m);
 
 	double valopt = valmax;
+	BitSet* Ropt = bitset_new(G->m);
+	// Recursive call
+	exact_recursive(G, k, R, queue, centers, options, valcur, &valopt, Ropt);
+	Result* res = result_new();
+	result_update(res, valopt, Ropt, G->S);
+
+	// Free
+	bitset_free(R);
+	bitset_free(Ropt);
+	free(priorities);
+	binary_heap_free(queue);
+	centers_free(centers, G->m);
+
+	return res;
+}
+
+Result* exact_pclstp(Graph* G, int k, Options* options) {
+	// Run pclst+
+	Result* res_pclstp = plesnik_unlimited(G, k, options, range_closest);
+	double valopt = res_pclstp->score;
+	result_free(res_pclstp);
+
+	double valcur;
+	Center** centers = centers_new_from_graph(G, options, &valcur);
+
+	// Get priorities
+	double* priorities;
+	if ((priorities = malloc(G->m * sizeof * priorities)) == NULL)
+		printf("ERROR - Ran out of memory: backtracking - priorities\n");
+	for (int i = 0; i < G->m; i++) {
+		priorities[i] = options->get_priority(centers[i]);
+	}
+
+	BinaryHeap* queue = binary_heap_new_range(priorities, G->m);
+	BitSet* R = bitset_new(G->m);
+
 	BitSet* Ropt = bitset_new(G->m);
 	// Recursive call
 	exact_recursive(G, k, R, queue, centers, options, valcur, &valopt, Ropt);

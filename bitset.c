@@ -111,6 +111,8 @@ int bitset_get_first(BitSet* bitset) { // Returns first element in bitset
 			return i * bitset->size + j;
 		}
 	}
+	printf("ERROR - Couldn't find first element in bitset: bitset_get_first\n");
+	return -1; // This shouldn't be possible
 }
 
 int* bitset_get_elements(BitSet* bitset) {

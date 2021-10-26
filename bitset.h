@@ -7,7 +7,7 @@ typedef struct BitSet {
 	set_type* set;
 	int n; // number of values (bits)
 	int N; // number of set_types in set
-	int numOfElements; // Number of bits equal 1 (TODO - currently not correct if adding an element that's already in ... check bitset_add/remove)
+	int numOfElements; // Number of bits equal 1
 	int size; // size of set entry
 } BitSet;
 

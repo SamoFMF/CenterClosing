@@ -131,21 +131,24 @@ void print_binary(unsigned long x) {
 
 int main(int argc, char* argv[]) {
     Options* options = options_new();
-    options->eval = unweighted_eval;
+    //options->eval = unweighted_eval;
+    options->eval = weighted_eval;
     options->get_first = hochbaum_start_best;
     options->get_priority = priority_eval_center;
 
     int k;
-    Graph* G = read_or_library_pmed("or_library/pmed/data/pmed3.txt", &k);
+    //Graph* G = read_or_library_pmed("or_library/pmed/data/pmed3.txt", &k);
     //Graph* G = read_or_library_pmed("generated/test1.txt", &k);
+    Graph* G = read_or_library("test/powerlaw1.txt");
     graph_add_sorted_adjacency_list(G, options);
+    k = 1;
 
     printf("k=%d\n", k);
     clock_t start = clock();
     //Result* res = solve_using_setcover(G, k, options);
-    Result* res = solve_using_setcover(G, k, options);
+    Result* res = independant_set(G, k, options);
     clock_t end = clock();
-    printf("setcover=%lf\n", res->score);
+    printf("score=%lf\n", res->score);
     printf("time=%lf\n\n", get_time(start, end));
     print_result("test", res, k, get_time(start, end));
 

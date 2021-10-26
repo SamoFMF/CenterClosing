@@ -317,6 +317,7 @@ double centers_redistribute_oneway(Center** centers, Graph* G, BitSet* R, int id
     for (int i = 0; i < center->numOfNodes; i++) {
         c = center->nodes[i];
         dmin = DBL_MAX;
+        s = -1;
 
         // Find new closest
         for (int j = 0; j < G->m; j++) {
@@ -328,6 +329,13 @@ double centers_redistribute_oneway(Center** centers, Graph* G, BitSet* R, int id
                 }
             }
         }
+
+        if (s < 0)
+            for (int j = 0; j < G->m; j++)
+                if (!bitset_contains(R, j) && j != idx) {
+                    s = j;
+                    break;
+                }
 
         centers[s]->delta++;
         closest[i] = s;
@@ -391,7 +399,7 @@ void centers_redistribute_closest(Center** centers, Graph* G, int idx, int* clos
     int inode, icenter;
     for (int i = 0; i < centers[idx]->numOfNodes; i++) {
         inode = centers[idx]->nodes[i];
-        icenter = closest[inode]; // TODO - premisli, ce je to okej. Ce je, morda naredi preko indeksov in zmanjsas closest? (DONE)
+        icenter = closest[inode];
         center = centers[icenter];
         center_add(center, inode);
         dist = options->eval(inode, icenter, G);

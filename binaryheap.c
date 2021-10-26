@@ -169,7 +169,6 @@ void binary_heap_increase_key(BinaryHeap* heap, int node, double value) {
 }
 
 void binary_heap_update_key(BinaryHeap* heap, int node, double value) {
-	// TODO - premisli, ce prav za increase pa decrease: heapify vs heapify_up
 	// Find node
 	int i = binary_heap_search(heap, node);
 	if (i >= heap->n) return;

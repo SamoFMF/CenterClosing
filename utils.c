@@ -59,7 +59,7 @@ LinkedList* linkedlist_new() {
 }
 
 void linkedlist_free(LinkedList* linkedlist) {
-	free(linkedlist); // TODO - premisli: prev in next hocemo se obdrzati v spominu?
+	free(linkedlist);
 }
 
 void linkedlist_free_all(LinkedList* linkedlist) { // Frees linkedlist and all previous linked lists
@@ -81,8 +81,9 @@ LinkedList* linkedlist_next(LinkedList* linkedlist_prev, int delta) {
 }
 
 LinkedList* linkedlist_remove_last(LinkedList* linkedlist) {
-	LinkedList* linkedlist_prev = linkedlist->prev; // TODO - what if this is NULL??
-	linkedlist_prev->next = NULL;
+	LinkedList* linkedlist_prev = linkedlist->prev;
+	if (linkedlist_prev != NULL)
+		linkedlist_prev->next = NULL;
 	linkedlist_free(linkedlist);
 	return linkedlist_prev;
 }
