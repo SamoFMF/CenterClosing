@@ -1,24 +1,26 @@
-set FOLDER=/
+set RPATH=
 
-gcc -o object_files/main.o -c %FOLDER%main.c"
-gcc -o object_files/bruteforce.o -c %FOLDER%bruteforce.c
-gcc -o object_files/bitset.o -c %FOLDER%bitset.c
-gcc -o object_files/graph.o -c %FOLDER%graph.c
-gcc -o object_files/binaryheap.o -c %FOLDER%binaryheap.c
-gcc -o object_files/utils.o -c %FOLDER%utils.c
-gcc -o object_files/graphgenerators.o -c %FOLDER%graphgenerators.c
-gcc -o object_files/exact.o -c %FOLDER%exact.c
-gcc -o object_files/algutils.o -c %FOLDER%algutils.c
-gcc -o object_files/greedy.o -c %FOLDER%greedy.c
-gcc -o object_files/priorityfunctions.o -c %FOLDER%priorityfunctions.c
-gcc -o object_files/hochbaum.o -c %FOLDER%hochbaum.c
-gcc -o object_files/plesnik.o -c %FOLDER%plesnik.c
-gcc -o object_files/backtracking.o -c %FOLDER%backtracking.c
-gcc -o object_files/heuristic.o -c %FOLDER%heuristic.c
-gcc -o object_files/result_to_json.o -c %FOLDER%result_to_json.c
-gcc -o object_files/tester.o -c %FOLDER%tester.c
-gcc -o object_files/setcover.o -c %FOLDER%setcover.c
-gcc -o object_files/independantset.o -c %FOLDER%independantset.c
+if not exist "object_files" mkdir object_files
+
+gcc -o object_files/main.o -c %RPATH%main.c
+gcc -o object_files/bruteforce.o -c %RPATH%bruteforce.c
+gcc -o object_files/bitset.o -c %RPATH%bitset.c
+gcc -o object_files/graph.o -c %RPATH%graph.c
+gcc -o object_files/binaryheap.o -c %RPATH%binaryheap.c
+gcc -o object_files/utils.o -c %RPATH%utils.c
+gcc -o object_files/graphgenerators.o -c %RPATH%graphgenerators.c
+gcc -o object_files/exact.o -c %RPATH%exact.c
+gcc -o object_files/algutils.o -c %RPATH%algutils.c
+gcc -o object_files/greedy.o -c %RPATH%greedy.c
+gcc -o object_files/priorityfunctions.o -c %RPATH%priorityfunctions.c
+gcc -o object_files/hochbaum.o -c %RPATH%hochbaum.c
+gcc -o object_files/plesnik.o -c %RPATH%plesnik.c
+gcc -o object_files/backtracking.o -c %RPATH%backtracking.c
+gcc -o object_files/heuristic.o -c %RPATH%heuristic.c
+gcc -o object_files/result_to_json.o -c %RPATH%result_to_json.c
+gcc -o object_files/tester.o -c %RPATH%tester.c
+gcc -o object_files/setcover.o -c %RPATH%setcover.c
+gcc -o object_files/independantset.o -c %RPATH%independantset.c
 
 gcc -O3 -std=gnu17 -o centerclosing^
  object_files/main.o^
