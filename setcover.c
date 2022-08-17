@@ -867,6 +867,7 @@ Result* solve_using_setcover(Graph* G, int k, Options* options) {
 	for (int i = 0; i < resOpt->length; i++)
 		bitset_remove(removed_centers, resOpt->C[i]);
 	result_update(res, dists[ihigh], removed_centers, G->S);
+
 	bitset_free(removed_centers);
 	resultsetcover_free(resOpt);
 	free(dists);

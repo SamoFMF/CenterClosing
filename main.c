@@ -129,7 +129,7 @@ void print_binary(unsigned long x) {
     printf("\n");
 }
 
-int main(int argc, char* argv[]) {
+int main_test(int argc, char* argv[]) {
     Options* options = options_new();
     //options->eval = unweighted_eval;
     options->eval = weighted_eval;
@@ -139,18 +139,54 @@ int main(int argc, char* argv[]) {
     int k;
     //Graph* G = read_or_library_pmed("or_library/pmed/data/pmed3.txt", &k);
     //Graph* G = read_or_library_pmed("generated/test1.txt", &k);
-    Graph* G = read_or_library("test/powerlaw1.txt");
+    //Graph* G = read_or_library("test/powerlaw1.txt");
+    Graph* G = read_or_library("test/powerlaw6.txt");
     graph_add_sorted_adjacency_list(G, options);
-    k = 1;
+    k = 17;
 
     printf("k=%d\n", k);
     clock_t start = clock();
     //Result* res = solve_using_setcover(G, k, options);
-    Result* res = independant_set(G, k, options);
+    Result* res = hochbaum_plus(G, k, options);
     clock_t end = clock();
     printf("score=%lf\n", res->score);
     printf("time=%lf\n\n", get_time(start, end));
     print_result("test", res, k, get_time(start, end));
+
+    //// Gmaps
+    //printf("\n\n");
+    //G = read_gmaps("data/gmaps/gmaps_distances10_full_6470");
+    //graph_add_sorted_adjacency_list(G, options);
+    //printf("DONE READING\n");
+
+    //printf("h=%lf\n\n", G->H[2324]);
+
+    //k = G->m - 1;
+    //options->get_first = hochbaum_start_best;
+    //start = clock();
+    //res = hochbaum(G, k, options);
+    //end = clock();
+    //printf("SOLVED\n");
+    //printf("score=%lf\n", res->score);
+    //printf("time=%lf\n\n", get_time(start, end));
+    ////print_result("test", res, k, get_time(start, end));
+
+    //options->get_first = hochbaum_start_random;
+    //start = clock();
+    //res = hochbaum(G, k, options);
+    //end = clock();
+    //printf("SOLVED\n");
+    //printf("score=%lf\n", res->score);
+    //printf("time=%lf\n\n", get_time(start, end));
+    //print_result("test", res, k, get_time(start, end));
+
+    //// Test
+    //BitSet* R = bitset_new_full(G->m);
+    //bitset_remove(R, 374);
+    //printf("\n\nscore = %lf\n", eval_score(G, R, options));
+    //printf("%lf\n", options->eval(2607, 138, G));
+    //printf("%lf\n", options->eval(2324, 138, G));
+
 
     /*printf("\n\nSTART:\n");
     char filename[128];

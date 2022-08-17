@@ -159,7 +159,7 @@ Result* exact_pclstp(Graph* G, int k, Options* options) {
 	// Run pclst+
 	Result* res_pclstp = plesnik_unlimited(G, k, options, range_closest);
 	double valopt = res_pclstp->score;
-	result_free(res_pclstp);
+	// result_free(res_pclstp);
 
 	double valcur;
 	Center** centers = centers_new_from_graph(G, options, &valcur);
@@ -178,8 +178,15 @@ Result* exact_pclstp(Graph* G, int k, Options* options) {
 	BitSet* Ropt = bitset_new(G->m);
 	// Recursive call
 	exact_recursive(G, k, R, queue, centers, options, valcur, &valopt, Ropt);
-	Result* res = result_new();
-	result_update(res, valopt, Ropt, G->S);
+	Result* res;
+	if (Ropt == NULL || Ropt->numOfElements == 0) {
+		res = res_pclstp;
+	}
+	else {
+		res = result_new();
+		result_update(res, valopt, Ropt, G->S);
+		result_free(res_pclstp);
+	}
 
 	// Free
 	bitset_free(R);

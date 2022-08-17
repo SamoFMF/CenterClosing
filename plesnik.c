@@ -239,27 +239,6 @@ BitSet* range_first(Graph* G, int k, double B, Options* options, int* ics) {
 	}
 }
 
-void result_update_plesnik(Result* result, BitSet* R, Graph* G, int k, Options* options) { // Version of result_update where extra slots are filled (ie. if algorithm removed too many centers, they are added back)
-	if (result->R != NULL)
-		free(result->R);
-	else if ((result->R = malloc(k * sizeof * result->R)) != NULL) {
-		//result->score = val;
-		int i = 0;
-		int j;
-		for (j = 0; j < R->n && i < k; j++)
-			if (bitset_contains(R, j))
-				result->R[i++] = G->S[j];
-		if (R->numOfElements > k) {
-			for (; j < R->n; j++)
-				bitset_remove(R, j);
-		}
-		result->score = eval_score(G, R, options);
-	}
-	else {
-		printf("ERROR - Ran out of memory: result_update");
-	}
-}
-
 Result* plesnik(Graph* G, int k, Options* options, BitSet* (*decision_solver)(Graph* G, int k, double B, Options* options, int* ics)) {
 	int* ics;
 	if ((ics = malloc(G->n * sizeof * ics)) == NULL)

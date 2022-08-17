@@ -397,7 +397,7 @@ void test_exact(Graph* G, Options* options, int kstart, int kend, int kstep, FIL
 				printf("\tsc\n");
 		}
 
-		// Set Cover
+		// bnb+
 		//if (bitset_contains(settings->algorithms, 'f' - 97) && scores != NULL) {
 		if (bitset_contains(settings->algorithms, 'f' - 97)) {
 			start = clock();
@@ -429,6 +429,12 @@ double* test_approximate(Graph* G, Options* options, int kstart, int kend, int k
 		if (settings->notifications)
 			printf("k=%d\n", k);
 		scoremin = DBL_MAX;
+
+		// Do both heuristic algorithms for no reason (seems to make everything work properly)
+		res = cluster_cardinality(G, k, options);
+		result_free(res);
+		res = cluster_radius(G, k, options);
+		result_free(res);
 
 		// Independant Set (Hochbaum-Shmoys)
 		if (bitset_contains(settings->algorithms, 'g' - 97)) {
@@ -737,7 +743,7 @@ double* test_approximate(Graph* G, Options* options, int kstart, int kend, int k
 				printf("\tgreedy_basic\n");
 		}
 
-		scores[(k - kstart) / kstep] = scoremin;
+		//scores[(k - kstart) / kstep] = scoremin;
 	}
 
 	return scores;

@@ -7,6 +7,10 @@
 #include "graph.h"
 #include "heuristic.h"
 
+double heuristic_cardinality(Center* center) {
+	return (double)center->numOfNodes;
+}
+
 Result* cluster_cardinality(Graph* G, int k, Options* options) {
 	double val;
 	Center** centers = centers_new_from_graph(G, options, &val);
@@ -14,7 +18,7 @@ Result* cluster_cardinality(Graph* G, int k, Options* options) {
 	if ((priorities = malloc(G->m * sizeof * priorities)) == NULL)
 		printf("ERROR - Ran out of memory: backtracking - priorities\n");
 	for (int i = 0; i < G->m; i++) {
-		priorities[i] = options->get_priority(centers[i]);
+		priorities[i] = heuristic_cardinality(centers[i]);
 	}
 	BinaryHeap* queue = binary_heap_new_range(priorities, G->m);
 	BitSet* R = bitset_new(G->m);
@@ -29,7 +33,7 @@ Result* cluster_cardinality(Graph* G, int k, Options* options) {
 		bitset_add(R, s);
 		dist = centers_redistribute_oneway(centers, G, R, s, options);
 		for (int is = 0; is < G->m; is++) {
-			priority = options->get_priority(centers[is]);
+			priority = heuristic_cardinality(centers[is]);
 			binary_heap_update_key(queue, is, priority);
 		}
 		if (dist > val)
@@ -114,6 +118,10 @@ Result* cluster_radius_basic(Graph* G, int k, Options* options) {
 	return res;
 }
 
+double heuristic_radius(Center* center) {
+	return center->history->val;
+}
+
 Result* cluster_radius(Graph* G, int k, Options* options) {
 	double val;
 	Center** centers = centers_new_from_graph(G, options, &val);
@@ -121,7 +129,7 @@ Result* cluster_radius(Graph* G, int k, Options* options) {
 	if ((priorities = malloc(G->m * sizeof * priorities)) == NULL)
 		printf("ERROR - Ran out of memory: backtracking - priorities\n");
 	for (int i = 0; i < G->m; i++) {
-		priorities[i] = options->get_priority(centers[i]);
+		priorities[i] = heuristic_radius(centers[i]);
 	}
 	BinaryHeap* queue = binary_heap_new_range(priorities, G->m);
 	BitSet* R = bitset_new(G->m);
@@ -136,7 +144,7 @@ Result* cluster_radius(Graph* G, int k, Options* options) {
 		bitset_add(R, s);
 		dist = centers_redistribute_oneway(centers, G, R, s, options);
 		for (int is = 0; is < G->m; is++) {
-			priority = options->get_priority(centers[is]);
+			priority = heuristic_radius(centers[is]);
 			binary_heap_update_key(queue, is, priority);
 		}
 		if (dist > val)

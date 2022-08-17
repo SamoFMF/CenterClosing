@@ -613,3 +613,40 @@ Graph* read_or_library_pmed(char* filename, int* k) {
 
 	return G;
 }
+
+// Gmaps
+Graph* read_gmaps(char* filename) {
+	FILE* file;
+	Graph* G = graph_new();
+	G->n = 6007;
+	G->m = 463;
+	G->N = 6470;
+	if ((G->C = malloc(G->n * sizeof * G->C)) == NULL)
+		printf("ERROR - Ran out of memory: read_gmaps - G->C\n");
+	for (int i = 0; i < G->n; i++)
+		G->C[i] = i;
+	if ((G->S = malloc(G->m * sizeof * G->S)) == NULL)
+		printf("ERROR - Ran out of memory: read_gmaps - G->S\n");
+	for (int i = 0; i < G->m; i++)
+		G->S[i] = G->n + i;
+
+	// Get distances
+	if ((G->D = malloc(G->N * sizeof * G->D)) == NULL)
+		printf("ERROR - Ran out of memory: read_gmaps - G->D\n");
+	for (int i = 0; i < G->N; i++)
+		if ((G->D[i] = malloc(G->N * sizeof * G->D[i])) == NULL)
+			printf("ERROR - Ran out of memory: read_gmaps - G->D[%d]\n", i);
+	fopen_s(&file, filename, "rb");
+	for (int i = 0; i < G->N; i++)
+		fread(G->D[i], sizeof(double), G->N, file);
+	fclose(file);
+
+	// Get weights
+	if ((G->H = malloc(G->n * sizeof * G->H)) == NULL)
+		printf("ERROR - Ran out of memory: read_gmaps - G->H\n");
+	fopen_s(&file, "data/gmaps/population_6007", "rb");
+	fread(G->H, sizeof(double), G->n, file);
+	fclose(file);
+
+	return G;
+}

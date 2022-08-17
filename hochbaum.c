@@ -25,7 +25,7 @@ int hochbaum_start_random(Graph* G, Options* options) {
 	return s;
 }
 
-int hochbaum_start_best(Graph* G, Options* options) {
+int hochbaum_start_best_wrong(Graph* G, Options* options) {
 	int sbest = 0;
 	double val;
 	double vmin = DBL_MAX;
@@ -46,6 +46,53 @@ int hochbaum_start_best(Graph* G, Options* options) {
 		}
 	}
 
+	return sbest;
+}
+
+int hochbaum_start_best_wrong2(Graph* G, Options* options) {
+	double dmax, dmin, dist;
+	int sbest = -1;
+	double dbest = DBL_MAX;
+	for (int removed = 0; removed < G->m; removed++) {
+		dmax = -1;
+		if (removed == 142)
+			printf("HERE");
+		for (int c = 0; c < G->n; c++) {
+			dmin = DBL_MAX;
+			for (int s = 0; s < G->m; s++) {
+				if (s != removed) {
+					dist = options->eval(c, s, G);
+					if (dist < dmin)
+						dmin = dist;
+				}
+			}
+			if (dmin > dmax)
+				dmax = dmin;
+		}
+		if (dmax < dbest) {
+			dbest = dmax;
+			sbest = removed;
+		}
+	}
+	return sbest;
+}
+
+int hochbaum_start_best(Graph* G, Options* options) {
+	double dmax, dmin, dist;
+	int sbest = -1;
+	double dbest = DBL_MAX;
+	for (int s = 0; s < G->m; s++) {
+		dmax = -1;
+		for (int c = 0; c < G->n; c++) {
+			dist = options->eval(c, s, G);
+			if (dist > dmax)
+				dmax = dist;
+		}
+		if (dmax < dbest) {
+			dbest = dmax;
+			sbest = s;
+		}
+	}
 	return sbest;
 }
 
@@ -149,8 +196,6 @@ Result* hochbaum_plus(Graph* G, int k, Options* options) {
 			res = NULL;
 		}
 	}
-	if (res != NULL)
-		result_free(res);
 	options->get_first = prev_fun;
 	return res_opt;
 }

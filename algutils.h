@@ -38,6 +38,8 @@ void result_free(Result* result);
 
 void result_update(Result* result, double val, BitSet* R, int* S);
 
+void result_update_plesnik(Result* result, BitSet* R, Graph* G, int k, Options* options);
+
 double eval_score(Graph* G, BitSet* R, Options* options);
 
 void save_removed_nodes(Result* res, BitSet* R);

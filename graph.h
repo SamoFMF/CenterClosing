@@ -68,4 +68,7 @@ Graph* read_or_library(char* filename);
 
 Graph* read_or_library_pmed(char* filename, int* k);
 
+// Gmaps
+Graph* read_gmaps(char* filename);
+
 #endif
